@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.9)
+set (CMAKE_CXX_STANDARD 11)
+project(photoeditor)
+find_package(OpenCV REQUIRED)
+include_directories(include)
+set(SOURCES cpusrc/image.cpp main.cpp)
+add_executable(photoeditor ${SOURCES})
+target_link_libraries(photoeditor ${OpenCV_LIBS})
