@@ -30,8 +30,9 @@ class Image
         vector<Pixel*> pixelsList;
 
     public:
-        Image(const char* name);              /// To read
-        Image(int _width, int _height);    /// To write    
+        //Image(const char* name);              /// To read
+        Image(string name);              /// To read
+        Image(int _width, int _height);       /// To write    
         ~Image();
 
         void saveImage(string savePath);
