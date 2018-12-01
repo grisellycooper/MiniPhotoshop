@@ -183,8 +183,8 @@ Image::Image(string imageDir)
         fin.read((char*)&fileheader, sizeof(fileheader));
         fin.read((char*)&infoheader, sizeof(infoheader));
 
-        //PrintHeader(sig, fileheader);
-        //PrintInfoH(infoheader);
+        PrintHeader(sig, fileheader);
+        PrintInfoH(infoheader);
         cout<<endl;
 
         width = infoheader.bmpWidth;
@@ -196,12 +196,22 @@ Image::Image(string imageDir)
         Pxl pxl;
         int cc = 0;
         //image.resize(width*height);
+
+        //Instanciate RGB arrays
+        reds = new int[width*height];
+        greens = new int[width*height];
+        blues = new int[width*height];
+
         for (unsigned int y = 0; y < height; y++) {
             for (unsigned int x = 0; x < width; x++) {
                 fin.read((char*)&pxl, sizeof(pxl));
                 
-                cout <<"RGB" <<" " << (int)pxl.blue <<" "<< (int)pxl.green <<" "<< (int)pxl.red<<endl;
-                pixelsList.push_back(new Pixel((int)pxl.blue, (int)pxl.green, (int)pxl.red));
+                cout <<cc <<" - RGB" <<" " << (int)pxl.blue <<" "<< (int)pxl.green <<" "<< (int)pxl.red<<endl;
+                //pixelsList.push_back(new Pixel((int)pxl.blue, (int)pxl.green, (int)pxl.red));
+                reds[cc] = (int)pxl.red;
+                greens[cc] = (int)pxl.green;
+                blues[cc] = (int)pxl.blue;
+                cc++;
             }
             fin.seekg(PaddingBytesPerRow, fin.cur);
         }
@@ -280,16 +290,17 @@ Image::~Image()
 
 void Image::saveImage(string name)
 {
-    int x, y, r, g, b;
+    cout <<"aa"<<endl;
+    /*int x, y, r, g, b;
     int index = 0;
     FILE *f;
     unsigned char *img = NULL;
-    int filesize = 54 + 3*width*height;  //w is your image width, h is image height, both int
-
+    int filesize = 54 + 3*width*height;  //w is your image width, h is image height, both int    
     img = (unsigned char *)malloc(3*width*height);
     memset(img,0,3*width*height);
     Pixel *pixel = NULL;
 
+    cout <<"bb"<<endl;
     for(int i=0; i<width; i++)
     {
         for(int j=0; j<height; j++)
@@ -303,13 +314,13 @@ void Image::saveImage(string name)
             if (r > 255) r=255;
             if (g > 255) g=255;
             if (b > 255) b=255;*/
-            img[(x+y*width)*3+2] = (unsigned char)(pixel->getRed());
-            img[(x+y*width)*3+1] = (unsigned char)(pixel->getGreen());
-            img[(x+y*width)*3+0] = (unsigned char)(pixel->getBlue());
+            /*img[(x+y*width)*3+2] = (unsigned char)(reds[index]);
+            img[(x+y*width)*3+1] = (unsigned char)(greens[index]);
+            img[(x+y*width)*3+0] = (unsigned char)(blues[index]);
             index++;
         }
     }
-
+    cout <<"cc"<<endl;
     unsigned char bmpfileheader[14] = {'B','M', 0,0,0,0, 0,0, 0,0, 54,0,0,0};
     unsigned char bmpinfoheader[40] = {40,0,0,0, 0,0,0,0, 0,0,0,0, 1,0, 24,0};
     unsigned char bmppad[3] = {0,0,0};
@@ -358,6 +369,80 @@ void Image::saveImage(string name)
     } else {
         cout << name << "Something went wrong with the file " <<name << "\n";
     }*/
+    // mimeType = "image/bmp";
+
+    unsigned char file[14] = {
+        'B','M', // magic
+        0,0,0,0, // size in bytes
+        0,0, // app data
+        0,0, // app data
+        40+14,0,0,0 // start of data offset
+    };
+    unsigned char info[40] = {
+        40,0,0,0, // info hd size
+        0,0,0,0, // width
+        0,0,0,0, // heigth
+        1,0, // number color planes
+        24,0, // bits per pixel
+        0,0,0,0, // compression is none
+        0,0,0,0, // image bits size
+        0x13,0x0B,0,0, // horz resoluition in pixel / m
+        0x13,0x0B,0,0, // vert resolutions (0x03C3 = 96 dpi, 0x0B13 = 72 dpi)
+        0,0,0,0, // #colors in pallete
+        0,0,0,0, // #important colors
+        };
+
+    int w=width;
+    int h=height;
+
+    int padSize  = (4-(w*3)%4)%4;    
+    int sizeData = w*h*3 + h*padSize;
+    int sizeAll  = sizeData + sizeof(file) + sizeof(info);
+
+    file[ 2] = (unsigned char)( sizeAll    );
+    file[ 3] = (unsigned char)( sizeAll>> 8);
+    file[ 4] = (unsigned char)( sizeAll>>16);
+    file[ 5] = (unsigned char)( sizeAll>>24);
+
+    info[ 4] = (unsigned char)( w   );
+    info[ 5] = (unsigned char)( w>> 8);
+    info[ 6] = (unsigned char)( w>>16);
+    info[ 7] = (unsigned char)( w>>24);
+
+    info[ 8] = (unsigned char)( h    );
+    info[ 9] = (unsigned char)( h>> 8);
+    info[10] = (unsigned char)( h>>16);
+    info[11] = (unsigned char)( h>>24);
+
+    info[20] = (unsigned char)( sizeData    );
+    info[21] = (unsigned char)( sizeData>> 8);
+    info[22] = (unsigned char)( sizeData>>16);
+    info[23] = (unsigned char)( sizeData>>24);
+
+    stream.write( (char*)file, sizeof(file) );
+    stream.write( (char*)info, sizeof(info) );
+
+    unsigned char pad[3] = {0,0,0};
+
+    for ( int y=0; y<h; y++ )
+    {
+        for ( int x=0; x<w; x++ )
+        {
+            long red = lround( 255.0 * waterfall[x][y] );
+            if ( red < 0 ) red=0;
+            if ( red > 255 ) red=255;
+            long green = red;
+            long blue = red;
+
+            unsigned char pixel[3];
+            pixel[0] = blue;
+            pixel[1] = green;
+            pixel[2] = red;
+
+            stream.write( (char*)pixel, 3 );
+        }
+        stream.write( (char*)pad, padSize );
+}
 }
 
 Pixel* Image::getRandomPixel()

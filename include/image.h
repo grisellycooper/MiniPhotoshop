@@ -26,13 +26,16 @@ class Image
     private:
         int width;
         int height;
-        int depth;
+        int depth; 
+        int* reds;
+        int* greens;
+        int* blues;      
         vector<Pixel*> pixelsList;
 
     public:
         //Image(const char* name);              /// To read
-        Image(string name);              /// To read
-        Image(int _width, int _height);       /// To write    
+        Image(string name);                     /// To read
+        Image(int _width, int _height);         /// To write    
         ~Image();
 
         void saveImage(string savePath);
