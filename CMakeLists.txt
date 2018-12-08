@@ -3,7 +3,15 @@ message(STATUS "CMake version: ${CMAKE_VERSION}")
 
 project(photoeditor)
 
+#set(Qt5Core_DIR "/opt/Qt/5.9.3/gcc_64/lib/cmake/Qt5Core/")
+#set(Qt5Widgets_DIR "/opt/Qt/5.9.3/gcc_64/lib/cmake/Qt5Widgets/")
+
 find_package(CUDA REQUIRED)
+
+
+find_package(Qt5Core REQUIRED )
+find_package(Qt5Widgets REQUIRED )
+find_package(Qt5Gui REQUIRED )
 
 include_directories(include)
 
@@ -41,3 +49,5 @@ message(STATUS "USE_CUDA: ${USE_CUDA}")
 if(USE_CUDA)
     add_definitions(-DUSE_CUDA)
 endif()
+
+qt5_use_modules( photoeditor Core Widgets Gui )
