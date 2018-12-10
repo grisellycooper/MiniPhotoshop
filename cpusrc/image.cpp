@@ -84,6 +84,28 @@ void Image::ReadInfoHeader(std::ifstream &fin, InfoHeader &infoH)
     fin.read((char*) &infoH, sizeof(infoH));
 }
 
+int Image::getImageSize()
+{
+    return width * height;
+}
+
+int Image::getImageWidth()
+{
+    return width;
+}
+
+int Image::getImageHeight()
+{
+    return height;
+}
+
+void Image::getRGBs(unsigned char* _reds, unsigned char* _greens, unsigned char* _blues)
+{
+    _reds = reds;
+    _greens = greens;
+    _blues = blues;
+}
+
 void Image::showImage()
 {
     //Display image with OpenCV    
@@ -252,21 +274,6 @@ void Image::saveImage(std::string name)
     } else {
         std::cout << name << "Something went wrong with the file " <<name << "\n";
     } 
-}
-
-int Image::getImageSize()
-{
-    return width * height;
-}
-
-int Image::getImageWidth()
-{
-    return width;
-}
-
-int Image::getImageHeight()
-{
-    return height;
 }
 
 int Image::grayScale(unsigned char* out)

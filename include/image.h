@@ -3,7 +3,9 @@
 #include <fstream>
 #include <opencv2/opencv.hpp>
 
-//** This class deals specifically with BMP files **//
+///////////////////////////////////////////////////////////////
+/// This class deals specifically with BMP files            ///
+///////////////////////////////////////////////////////////////
 
 //** BMP FILE HEADER **//
 struct BMPSignature
@@ -75,6 +77,7 @@ class Image
         int getImageSize();
         int getImageWidth();
         int getImageHeight();
+        void getRGBs(unsigned char* _reds, unsigned char* _greens, unsigned char* _blues);
         void saveImage(std::string savePath);
         void showImage();
         void showImage(unsigned char* img);
