@@ -18,7 +18,7 @@ extern "C" void  executeKernelTransfGamma(
     unsigned char* h_outred, unsigned char* h_outgreen, unsigned char* h_outblue,
 	unsigned char* d_inred, unsigned char* d_ingreen, unsigned char* d_inblue,
     unsigned char* d_outred, unsigned char* d_outgreen, unsigned char* d_outblue,
-	float *gamma);
+	float gamma, int size, size_t sizePixelsArray);
 
 
 ///////////////////////////////////////////////////////////////
@@ -85,8 +85,9 @@ int main(int argc, char* argv[]){
     
     //** Transformacion Gamma **//
     
-    int sizeImage = image->getImageSize();
-    size_t sizePixelsArray = sizeImage * sizeof(unsigned char);
+    int imageSize = image->getImageSize();
+    size_t sizePixelsArray = imageSize * sizeof(unsigned char);
+    float gamma = 0.5f;
 
     /// Allocate memory           
     /// Host: Initial RGB values. Output RGB values
@@ -96,14 +97,14 @@ int main(int argc, char* argv[]){
     unsigned char *h_outred = (unsigned char *)malloc(sizePixelsArray);
     unsigned char *h_outgreen = (unsigned char *)malloc(sizePixelsArray);
     unsigned char *h_outblue = (unsigned char *)malloc(sizePixelsArray);    
-    float *h_gamma = (float *)malloc(sizeof(float));
+    //float *h_gamma = (float *)malloc(sizeof(float));
 
     image->getRGBs(h_inred, h_ingreen, h_inblue);
 
     /// Device: Initial RGB values. Output RGB values
 	unsigned char *d_inred, *d_ingreen, *d_inblue;
     unsigned char *d_outred, *d_outgreen, *d_outblue;
-    float *d_gamma;
+    //float *d_gamma;
 
     CUDA_CALL(cudaMalloc((void**) &d_inred, sizePixelsArray));
     CUDA_CALL(cudaMalloc((void**) &d_ingreen, sizePixelsArray));
@@ -111,18 +112,19 @@ int main(int argc, char* argv[]){
     CUDA_CALL(cudaMalloc((void**) &d_outred, sizePixelsArray));
     CUDA_CALL(cudaMalloc((void**) &d_outgreen, sizePixelsArray));
     CUDA_CALL(cudaMalloc((void**) &d_outblue, sizePixelsArray));
-    CUDA_CALL(cudaMalloc((void**) &d_gamma, sizeof(float)));
+    //CUDA_CALL(cudaMalloc((void**) &d_gamma, sizeof(float)));
     
     /// Copy host to device
-    CUDA_CALL(cudaMemcpy(d_inred, h_inred, cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(d_ingreen, h_ingreen, cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(d_inblue, h_inblue, cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(d_outred, h_outred, cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(d_outgreen, h_outgreen, cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(d_outblue, h_outblue, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(d_inred, h_inred, sizePixelsArray, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(d_ingreen, h_ingreen, sizePixelsArray, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(d_inblue, h_inblue, sizePixelsArray, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(d_outred, h_outred, sizePixelsArray, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(d_outgreen, h_outgreen, sizePixelsArray, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(d_outblue, h_outblue, sizePixelsArray, cudaMemcpyHostToDevice));
 
     /// Execute Kernel
-
+    executeKernelTransfGamma(h_inred, h_ingreen, h_inblue, h_outred, h_outgreen, h_outblue, 
+        d_inred, d_ingreen, d_inblue, d_outred, d_outgreen, d_outblue, gamma, imageSize, sizePixelsArray);
 
     /// Free space
     free(h_inred);

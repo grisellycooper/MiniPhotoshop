@@ -23,6 +23,17 @@ int main(int argc, char* argv[]){
     image->showImage();
     //image->showHistogram();
 
+    //** Gamma **//
+    float gamma = 2.0f;
+    unsigned char *gred = new unsigned char[image->getImageSize()];    
+    unsigned char *ggreen = new unsigned char[image->getImageSize()];    
+    unsigned char *gblue = new unsigned char[image->getImageSize()];    
+    start = clock();
+    image->gamma(gred, ggreen, gblue, gamma);
+    end = clock();
+    std::cout<<"Gamma: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
+    image->showImage(gred, ggreen, gblue);  
+
     //** GrayScale **//
     unsigned char *gs = new unsigned char[image->getImageSize()];
     start = clock();
@@ -31,6 +42,16 @@ int main(int argc, char* argv[]){
     std::cout<<"Converting to GrayScale: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
     image->showImage(gs);    
 
+    //** Binary **//
+    int threshold = 120;
+    unsigned char *binary = new unsigned char[image->getImageSize()];    
+    start = clock();
+    image->binary(gs, binary, threshold);
+    end = clock();
+    std::cout<<"Binary: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
+    image->showImage(binary);  
+
+    
     //** Sobel Filter / Detector de bordes **//
     unsigned char *sobel = new unsigned char[image->getImageSize()];
     start = clock();

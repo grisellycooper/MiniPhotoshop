@@ -276,6 +276,34 @@ void Image::saveImage(std::string name)
     } 
 }
 
+
+int Image::gamma(unsigned char* outred, unsigned char* outgreen, unsigned char* outblue, float gamma)
+{
+    int size = width * height;
+    int i;
+//#	pragma omp parallel for num_threads(2) default(none) private(i, size) shared(reds,greens,blues) schedule(dynamic,4)
+    for(i = 0; i < size; i++){
+        outred[i] = 255*pow((reds[i]/255),gamma);
+        outgreen[i] = 255*pow((greens[i]/255),gamma);
+        outblue[i] = 255*pow((blues[i]/255),gamma);
+    }
+}
+
+int Image::binary(unsigned char* inGS, unsigned char* out, int threshold)
+{
+    if(threshold < 1 || threshold > 255){
+        std::cout<<"Invalid threshold value!";
+        return -1;
+    }
+        
+    int size = width * height;
+    int i;
+//#	pragma omp parallel for num_threads(2) default(none) private(i, size) shared(reds,greens,blues) schedule(dynamic,4)
+    for(i = 0; i < size; i++){
+        out[i] = inGS[i] < threshold ? (unsigned char) 0 : (unsigned char) 255;
+    }
+}
+
 int Image::grayScale(unsigned char* out)
 {
     int size = width * height;
@@ -349,7 +377,7 @@ int Image::sobel(unsigned char* in, unsigned char* out)
     return 0;
 }
 
-int Image::maximo(unsigned char* max_red, unsigned char* max_green, unsigned char* max_blue, int k)
+int Image::maximo(unsigned char* outred, unsigned char* outgreen, unsigned char* outblue, int k)
 {
     //** original cv::Matrices are augmented and filled with 0 **//
     //** they're augmented acording to parameter k **//
@@ -392,9 +420,9 @@ int Image::maximo(unsigned char* max_red, unsigned char* max_green, unsigned cha
                 tmpg.push_back((int)mgreen[h-r][w-r]);
                 tmpb.push_back((int)mblue[h-r][w-r]);
             }
-            max_red[index] = *max_element(tmpr.begin(), tmpr.end());  
-            max_green[index] = *max_element(tmpg.begin(), tmpg.end());  
-            max_blue[index] = *max_element(tmpb.begin(), tmpb.end());  
+            outred[index] = *max_element(tmpr.begin(), tmpr.end());  
+            outgreen[index] = *max_element(tmpg.begin(), tmpg.end());  
+            outblue[index] = *max_element(tmpb.begin(), tmpb.end());  
             
             tmpr.clear();
             tmpg.clear();

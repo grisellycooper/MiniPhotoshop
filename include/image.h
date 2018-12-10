@@ -83,7 +83,9 @@ class Image
         void showImage(unsigned char* img);
         void showImage(unsigned char *_reds, unsigned char *_greens, unsigned char *_blues);
         void showHistogram(); 
+        int gamma(unsigned char* outred, unsigned char* outgreen, unsigned char* outblue, float gamma);        
+        int binary(unsigned char* inGS, unsigned char* out, int threshold);        
         int grayScale(unsigned char* out);
         int sobel(unsigned char* inGS, unsigned char* out);
-        int maximo(unsigned char* max_red, unsigned char* max_green, unsigned char* max_blue, int k);               
+        int maximo(unsigned char* outred, unsigned char* outgreen, unsigned char* outblue, int k);               
 };
