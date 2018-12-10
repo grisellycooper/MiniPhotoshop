@@ -1,7 +1,9 @@
 #include <string>
 #include <vector>
+#include "opencv2/core/core.hpp"
 
 using namespace std;
+using namespace cv;
 
 //** FILE HEADER **//
 struct BMPSignature
@@ -9,9 +11,6 @@ struct BMPSignature
     unsigned char data[2]; //equal to the string 'BM'
     BMPSignature() { data[0] = data[1] = 0; }
 };
-
-//#pragma pack(push)  // push current alignment to stack
-//#pragma pack(1)     // set alignment to 1 byte boundary
 
 struct BMPHeader
 {
@@ -22,8 +21,6 @@ struct BMPHeader
 
     BMPHeader(): fileSize(0),  reserved1(0), reserved2(0), dataOffset(0) { }
 }; 
-
-//#define BF_TYPE 0x4D42             //BM
 
 //** FILE HEADER **//
 struct infoHeader
@@ -53,24 +50,6 @@ struct Pxl
     unsigned char red;
 };
 
-class Pixel
-{
-    private:
-        int red;
-        int green;
-        int blue;        
-
-    public:
-        Pixel(int _red, int _green, int _blue);
-        Pixel(Pixel *pixel);
-
-        int getRed();
-        int getGreen();
-        int getBlue();
-        string getRGB();
-        void setRGB(int _red, int _green, int _blue);
-};
-
 class Image
 {
     private:
@@ -80,13 +59,13 @@ class Image
         int width;
         int height;
         int depth; 
-        int* reds;
-        int* greens;
-        int* blues;      
-        vector<Pixel*> pixelsList;
-
+        unsigned char* reds;
+        unsigned char* greens;
+        unsigned char* blues;
+        Mat originalImage;
+        Mat outputImage;      
+   
     public:
-        //Image(const char* name);              /// To read
         Image(string name);                     /// To read
         Image(int _width, int _height);         /// To write    
         ~Image();
@@ -94,8 +73,12 @@ class Image
         void saveImage(string savePath);
         int getImageSize();
         int getImageWidth();
-        int getImageHeight();        
-        vector<Pixel*> getPixelsList();
-        Pixel* getPixel(int index);
-        Pixel* getRandomPixel();        
+        int getImageHeight();
+        void showImage();
+        void showImage(unsigned char* img);
+        void showImage(unsigned char *_reds, unsigned char *_greens, unsigned char *_blues);
+        void showHistogram(); 
+        int grayScale(unsigned char* out);
+        int sobel(unsigned char* inGS, unsigned char* out);
+        int maximo(unsigned char* max_red, unsigned char* max_green, unsigned char* max_blue, int k);               
 };

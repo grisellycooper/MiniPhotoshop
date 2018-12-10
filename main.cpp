@@ -1,5 +1,10 @@
 #include <iostream>
 #include "include/image.h"
+#include "opencv2/core/core.hpp"
+#include "opencv2/features2d/features2d.hpp"
+#include "opencv2/highgui/highgui.hpp"
+
+using namespace cv;
 
 int main(int argc, char* argv[]){
     /// Time counting
@@ -9,8 +14,8 @@ int main(int argc, char* argv[]){
     /// Read & Write image path
     std::string inputImagePath, outputImagePath;
     
-    inputImagePath = argv[1];           /// Input path        
-
+    //inputImagePath = argv[1];           /// Input path        
+    inputImagePath = "../media/Garfield-Portada.bmp";
     /// Read image
     start = clock();
     Image *image(new Image(inputImagePath));
@@ -18,20 +23,35 @@ int main(int argc, char* argv[]){
     std::cout<<"Reading file: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
     globalTime += (end - start)/(double)CLOCKS_PER_SEC;
 
-    /*std::cout<< image->getPixel(1)->getRGB() <<std::endl;
-    std::cout<< image->getPixel(2)->getRGB() <<std::endl;
-    std::cout<< image->getPixel(50)->getRGB() <<std::endl;
-    std::cout<< image->getImageHeight() <<std::endl;
-    std::cout<< image->getImageWidth() <<std::endl; */ 
+    image->showImage();
+    //image->showHistogram();
 
-    /// Set the output file path
-    //std::string saveImageAs = "../out/" +std::to_string(4) +"_" + inputImagePath.substr(9,(inputImagePath.size()));
-    //std::cout<<saveImageAs;
-    //string saveImageAs = "../out/" + inputImagePath.substr(9,(inputImagePath.size()));
-    string saveImageAs = "output.ppm";
-    cout<<saveImageAs <<endl;
+    //unsigned char *gs = new unsigned char[image->getImageSize()];
+    //start = clock();
+    //image->grayScale(gs);
+    //end = clock();
+    //std::cout<<"Converting to GrayScale: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
+    //image->showImage(gs);    
 
-    image->saveImage(saveImageAs);
+    //** Sobel Filter / Detector de bordes **//
+    //unsigned char *sobel = new unsigned char[image->getImageSize()];
+    //unsigned char sobel[image->getImageSize()] = {0};
+    //start = clock();
+    //image->sobel(gs, sobel);
+    //end = clock();
+    //std::cout<<"Sobel Filtering: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
+    //image->showImage(sobel);
+
+    //** Maximun Filter **//
+    unsigned char *max_red = new unsigned char[image->getImageSize()];    
+    unsigned char *max_green = new unsigned char[image->getImageSize()];    
+    unsigned char *max_blue = new unsigned char[image->getImageSize()];    
+    int k = 6; 
+    start = clock();
+    image->maximo(max_red, max_green, max_blue, k);
+    end = clock();
+    std::cout<<"Max Filter: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
+    image->showImage(max_red, max_green, max_blue);   
 }
 
 /*#include <QApplication>

@@ -1,53 +1,10 @@
-cmake_minimum_required(VERSION 3.5.1)
-message(STATUS "CMake version: ${CMAKE_VERSION}")
-
+cmake_minimum_required(VERSION 3.9)
+set (CMAKE_CXX_STANDARD 11)
 project(photoeditor)
-
-#set(Qt5Core_DIR "/opt/Qt/5.9.3/gcc_64/lib/cmake/Qt5Core/")
-#set(Qt5Widgets_DIR "/opt/Qt/5.9.3/gcc_64/lib/cmake/Qt5Widgets/")
-
-find_package(CUDA REQUIRED)
-
-
-find_package(Qt5Core REQUIRED )
-find_package(Qt5Widgets REQUIRED )
-find_package(Qt5Gui REQUIRED )
-
+find_package(OpenCV REQUIRED)
+#find_package(OpenMP REQUIRED)
 include_directories(include)
-
-option(USE_CUDA "Use CUDA" ON)
-
-file(GLOB main_file "${CMAKE_SOURCE_DIR}/main.cpp")
-file(GLOB cpu_source_files "${CMAKE_SOURCE_DIR}/cpusrc/*.cpp")
-file(GLOB gpu_source_files "${CMAKE_SOURCE_DIR}/gpusrc/*.cu")
-
-if( ("${CMAKE_VERSION}" VERSION_EQUAL 3.8) OR
-        ("${CMAKE_VERSION}" VERSION_GREATER 3.8) )
-    # Modern CMake
-    if(USE_CUDA)
-        enable_language("CUDA")
-        cuda_add_executable(photoeditor ${main_file} ${cpu_source_files} ${gpu_source_files})
-    else(USE_CUDA)
-        cuda_add_executable(photoeditor ${main_file} ${cpu_source_files})
-    endif()
-else()
-    # Old CMake
-    cuda_add_executable(photoeditor ${cpu_source_files})
-    if(USE_CUDA)
-        find_package(CUDA 8.0)
-        if(NOT CUDA_FOUND)
-            message(STATUS "CUDA not found")
-            set(USE_CUDA OFF)
-        else()
-            CUDA_ADD_LIBRARY(main_gpu ${gpu_source_files})
-            target_link_libraries(photoeditor main_gpu)
-        endif()
-    endif()
-endif()
-
-message(STATUS "USE_CUDA: ${USE_CUDA}")
-if(USE_CUDA)
-    add_definitions(-DUSE_CUDA)
-endif()
-
-qt5_use_modules( photoeditor Core Widgets Gui )
+set(SOURCES cpusrc/image.cpp main.cpp)
+add_executable(photoeditor ${SOURCES})
+#target_link_libraries(photoeditor ${OpenCV_LIBS} ${OpenMP_CXX_FLAGS})
+target_link_libraries(photoeditor ${OpenCV_LIBS})
