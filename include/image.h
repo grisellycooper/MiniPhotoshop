@@ -65,6 +65,9 @@ class Image
         unsigned char* reds;                    /// Image data
         unsigned char* greens;
         unsigned char* blues;
+        int histoR[255];
+        int histoG[255];
+        int histoB[255];
         cv::Mat originalImage;     
    
     public:
@@ -77,15 +80,16 @@ class Image
         int getImageSize();
         int getImageWidth();
         int getImageHeight();
-        void getRGBs(unsigned char* _reds, unsigned char* _greens, unsigned char* _blues);
+        void getImageHistograms(); 
+        void getRGBs(unsigned char* _reds, unsigned char* _greens, unsigned char* _blues);               
         void saveImage(std::string savePath);
         void showImage();
         void showImage(unsigned char* img);
         void showImage(unsigned char *_reds, unsigned char *_greens, unsigned char *_blues);
         void showHistogram(); 
         int gamma(unsigned char* outred, unsigned char* outgreen, unsigned char* outblue, float gamma);        
-        int binary(unsigned char* inGS, unsigned char* out, int threshold);        
         int grayScale(unsigned char* out);
+        int binary(unsigned char* inGS, unsigned char* out, int threshold);                
         int sobel(unsigned char* inGS, unsigned char* out);
         int maximo(unsigned char* outred, unsigned char* outgreen, unsigned char* outblue, int k);               
 };

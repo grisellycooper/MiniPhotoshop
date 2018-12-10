@@ -6,6 +6,34 @@
 #include <omp.h>
 #include "../include/image.h"
 
+
+void PrintHeader(BMPSignature sig, BMPHeader header)
+{
+    std::cout << "BMP HEADER"    << std::endl;
+    std::cout << "Signature  : " << sig.data[0] << sig.data[1] << std::endl;
+    std::cout << "File Size  : " << header.fileSize << " byte(s)" << std::endl;
+    std::cout << "Reserved1  : " << header.reserved1 << std::endl;
+    std::cout << "Reserved2  : " << header.reserved2 << std::endl;
+    std::cout << "Data Offset: " << header.dataOffset << " byte(s)" << std::endl;
+}
+
+void PrintInfoH(InfoHeader infoH)
+{
+    std::cout << std::endl;
+    std::cout << "INFO HEADER"                   << std::endl;
+    std::cout << "Size: "                        << infoH.bmpSize << " byte(s)" << std::endl;
+    std::cout << "Width: "                       << infoH.bmpWidth << " pixel(s)" << std::endl;
+    std::cout << "Height: "                      << infoH.bmpHeight << " pixel(s)" << std::endl;
+    std::cout << "Planes: "                      << infoH.bmpPlanes << std::endl;
+    std::cout << "Bit Count: "                   << infoH.bmpBitCount << std::endl;
+    std::cout << "Type of Compression: "         << infoH.bmpCompression << std::endl;
+    std::cout << "Size of Image: "               << infoH.bmpSizeImage << " byte(s)" << std::endl;
+    std::cout << "Pixels per Meter in X Axis: "  << infoH.bmpXPelsPerMeter << std::endl;
+    std::cout << "Pixels per Meter in Y Axis: "  << infoH.bmpYPelsPerMeter << std::endl;
+    std::cout << "Colors Used: "                 << infoH.bmpClrUsed << std::endl;
+    std::cout << "Important Colours: "           << infoH.bmpClrImportant << std::endl;
+}
+
 Image::Image(int _width, int _height)
 {
     width = _width;
@@ -21,9 +49,9 @@ Image::Image(std::string imageDir)
         fin.read((char*)&fileHeader, sizeof(fileHeader));
         fin.read((char*)&infoHeader, sizeof(infoHeader));
 
-        //PrintHeader(sig, fileheader);
-        //PrintInfoH(infoheader);
-        //std::cout<<std::endl;
+        PrintHeader(signature, fileHeader);
+        PrintInfoH(infoHeader);
+        std::cout<<std::endl;
 
         width = infoHeader.bmpWidth;
         height = infoHeader.bmpHeight;
@@ -55,7 +83,7 @@ Image::Image(std::string imageDir)
             fin.seekg(PaddingBytesPerRow, fin.cur);
         }
     }    
-    fin.close();   
+    fin.close();     
 }
 
 Image::~Image()
@@ -104,6 +132,29 @@ void Image::getRGBs(unsigned char* _reds, unsigned char* _greens, unsigned char*
     _reds = reds;
     _greens = greens;
     _blues = blues;
+}
+
+void Image::getImageHistograms()
+{
+    /// Initialize histograms 
+    histoR[255] = {0};
+    histoG[255] = {0};
+    histoB[255] = {0};  
+    
+    int size = width * height;
+    int i;
+    for(i = 0; i <size; i++)
+    {
+        histoR[(int)reds[i]]++;
+        histoG[(int)greens[i]]++;
+        histoB[(int)blues[i]]++;
+    }
+
+    /*std::cout<<"------"<<std::endl;
+    for(int i = 0; i <=255; i++)
+    {
+        std::cout<<histoR[i]<<" "<<histoG[i]<<" "<<histoB[i]<<std::endl;
+    }*/
 }
 
 void Image::showImage()
@@ -283,9 +334,19 @@ int Image::gamma(unsigned char* outred, unsigned char* outgreen, unsigned char* 
     int i;
 //#	pragma omp parallel for num_threads(2) default(none) private(i, size) shared(reds,greens,blues) schedule(dynamic,4)
     for(i = 0; i < size; i++){
-        outred[i] = 255*pow((reds[i]/255),gamma);
-        outgreen[i] = 255*pow((greens[i]/255),gamma);
-        outblue[i] = 255*pow((blues[i]/255),gamma);
+        outred[i] = (unsigned char) 255*pow((reds[i]/255),1/gamma);
+        outgreen[i] = (unsigned char) 255*pow((greens[i]/255),1/gamma);
+        outblue[i] = (unsigned char) 255*pow((blues[i]/255),1/gamma);
+    }
+}
+
+int Image::grayScale(unsigned char* out)
+{
+    int size = width * height;
+    int i;
+//#	pragma omp parallel for num_threads(2) default(none) private(i, size) shared(reds,greens,blues) schedule(dynamic,4)
+    for(i = 0; i < size; i++){
+        out[i] = 0.21*reds[i] + 0.72*greens[i] + 0.07*blues[i];       //Precise grayScale
     }
 }
 
@@ -301,16 +362,6 @@ int Image::binary(unsigned char* inGS, unsigned char* out, int threshold)
 //#	pragma omp parallel for num_threads(2) default(none) private(i, size) shared(reds,greens,blues) schedule(dynamic,4)
     for(i = 0; i < size; i++){
         out[i] = inGS[i] < threshold ? (unsigned char) 0 : (unsigned char) 255;
-    }
-}
-
-int Image::grayScale(unsigned char* out)
-{
-    int size = width * height;
-    int i;
-//#	pragma omp parallel for num_threads(2) default(none) private(i, size) shared(reds,greens,blues) schedule(dynamic,4)
-    for(i = 0; i < size; i++){
-        out[i] = 0.21*reds[i] + 0.72*greens[i] + 0.07*blues[i];       //Precise grayScale
     }
 }
 
@@ -433,29 +484,3 @@ int Image::maximo(unsigned char* outred, unsigned char* outgreen, unsigned char*
     return 0;    
 }
 
-void PrintHeader(BMPSignature sig, BMPHeader header)
-{
-    std::cout << "BMP HEADER"    << std::endl;
-    std::cout << "Signature  : " << sig.data[0] << sig.data[1] << std::endl;
-    std::cout << "File Size  : " << header.fileSize << " byte(s)" << std::endl;
-    std::cout << "Reserved1  : " << header.reserved1 << std::endl;
-    std::cout << "Reserved2  : " << header.reserved2 << std::endl;
-    std::cout << "Data Offset: " << header.dataOffset << " byte(s)" << std::endl;
-}
-
-void PrintInfoH(InfoHeader infoH)
-{
-    std::cout << std::endl;
-    std::cout << "INFO HEADER"                   << std::endl;
-    std::cout << "Size: "                        << infoH.bmpSize << " byte(s)" << std::endl;
-    std::cout << "Width: "                       << infoH.bmpWidth << " pixel(s)" << std::endl;
-    std::cout << "Height: "                      << infoH.bmpHeight << " pixel(s)" << std::endl;
-    std::cout << "Planes: "                      << infoH.bmpPlanes << std::endl;
-    std::cout << "Bit Count: "                   << infoH.bmpBitCount << std::endl;
-    std::cout << "Type of Compression: "         << infoH.bmpCompression << std::endl;
-    std::cout << "Size of Image: "               << infoH.bmpSizeImage << " byte(s)" << std::endl;
-    std::cout << "Pixels per Meter in X Axis: "  << infoH.bmpXPelsPerMeter << std::endl;
-    std::cout << "Pixels per Meter in Y Axis: "  << infoH.bmpYPelsPerMeter << std::endl;
-    std::cout << "Colors Used: "                 << infoH.bmpClrUsed << std::endl;
-    std::cout << "Important Colours: "           << infoH.bmpClrImportant << std::endl;
-}

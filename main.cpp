@@ -10,8 +10,8 @@ int main(int argc, char* argv[]){
     /// Read & Write image path
     std::string inputImagePath, outputImagePath;
     
-    //inputImagePath = argv[1];           /// Input path        
-    inputImagePath = "../media/Garfield-Portada.bmp";
+    inputImagePath = argv[1];           /// Input path        
+    //inputImagePath = "../media/cabana.bmp";
     
     /// Read image
     start = clock();
@@ -20,11 +20,28 @@ int main(int argc, char* argv[]){
     std::cout<<"Reading file: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
     globalTime += (end - start)/(double)CLOCKS_PER_SEC;
 
+    /// Display input image
     image->showImage();
+
+    /// get Image Histogram
+    start = clock();
+    image->getImageHistograms();
+    end = clock();
+    std::cout<<"Getting RGB Histograms: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
+    
+
     //image->showHistogram();
+    
+    //** GrayScale **//
+    /*unsigned char *gs = new unsigned char[image->getImageSize()];
+    start = clock();
+    image->grayScale(gs);
+    end = clock();
+    std::cout<<"Converting to GrayScale: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
+    image->showImage(gs);    */
 
     //** Gamma **//
-    float gamma = 2.0f;
+    /*float gamma = 4.0f;
     unsigned char *gred = new unsigned char[image->getImageSize()];    
     unsigned char *ggreen = new unsigned char[image->getImageSize()];    
     unsigned char *gblue = new unsigned char[image->getImageSize()];    
@@ -32,36 +49,28 @@ int main(int argc, char* argv[]){
     image->gamma(gred, ggreen, gblue, gamma);
     end = clock();
     std::cout<<"Gamma: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
-    image->showImage(gred, ggreen, gblue);  
-
-    //** GrayScale **//
-    unsigned char *gs = new unsigned char[image->getImageSize()];
-    start = clock();
-    image->grayScale(gs);
-    end = clock();
-    std::cout<<"Converting to GrayScale: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
-    image->showImage(gs);    
+    image->showImage(gred, ggreen, gblue);  */
 
     //** Binary **//
-    int threshold = 120;
+    /*int threshold = 120;
     unsigned char *binary = new unsigned char[image->getImageSize()];    
     start = clock();
     image->binary(gs, binary, threshold);
     end = clock();
     std::cout<<"Binary: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
-    image->showImage(binary);  
+    image->showImage(binary);  */
 
     
     //** Sobel Filter / Detector de bordes **//
-    unsigned char *sobel = new unsigned char[image->getImageSize()];
+    /*unsigned char *sobel = new unsigned char[image->getImageSize()];
     start = clock();
     image->sobel(gs, sobel);
     end = clock();
     std::cout<<"Sobel Filtering: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
-    image->showImage(sobel);
+    image->showImage(sobel);*/
 
     //** Maximun Filter **//
-    unsigned char *max_red = new unsigned char[image->getImageSize()];    
+    /*unsigned char *max_red = new unsigned char[image->getImageSize()];    
     unsigned char *max_green = new unsigned char[image->getImageSize()];    
     unsigned char *max_blue = new unsigned char[image->getImageSize()];    
     int k = 6; 
@@ -69,5 +78,8 @@ int main(int argc, char* argv[]){
     image->maximo(max_red, max_green, max_blue, k);
     end = clock();
     std::cout<<"Max Filter: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
-    image->showImage(max_red, max_green, max_blue);   
+    image->showImage(max_red, max_green, max_blue);   */
+
+    //** Equalization **//
+    
 }
