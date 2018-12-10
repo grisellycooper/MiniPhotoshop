@@ -65,9 +65,9 @@ class Image
         unsigned char* reds;                    /// Image data
         unsigned char* greens;
         unsigned char* blues;
-        int histoR[255];
-        int histoG[255];
-        int histoB[255];
+        int histoR[256];
+        int histoG[256];
+        int histoB[256];
         cv::Mat originalImage;     
    
     public:
@@ -86,7 +86,8 @@ class Image
         void showImage();
         void showImage(unsigned char* img);
         void showImage(unsigned char *_reds, unsigned char *_greens, unsigned char *_blues);
-        void showHistogram(); 
+        void showHistogram();
+        int equalization(unsigned char* outred, unsigned char* outgreen, unsigned char* outblue); 
         int gamma(unsigned char* outred, unsigned char* outgreen, unsigned char* outblue, float gamma);        
         int grayScale(unsigned char* out);
         int binary(unsigned char* inGS, unsigned char* out, int threshold);                

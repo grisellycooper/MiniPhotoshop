@@ -22,16 +22,25 @@ int main(int argc, char* argv[]){
 
     /// Display input image
     image->showImage();
-
+    //image->showHistogram();
+        
     /// get Image Histogram
     start = clock();
     image->getImageHistograms();
     end = clock();
     std::cout<<"Getting RGB Histograms: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
     
+    //** Equalization **//
+    unsigned char *eq_red = new unsigned char[image->getImageSize()];    
+    unsigned char *eq_green = new unsigned char[image->getImageSize()];    
+    unsigned char *eq_blue = new unsigned char[image->getImageSize()]; 
+    std::cout<<"0 ";
+    start = clock();
+    image->equalization(eq_red,eq_green, eq_blue);
+    end = clock();
+    std::cout<<"Equalization: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
+    image->showImage(eq_red, eq_green, eq_blue);
 
-    //image->showHistogram();
-    
     //** GrayScale **//
     /*unsigned char *gs = new unsigned char[image->getImageSize()];
     start = clock();

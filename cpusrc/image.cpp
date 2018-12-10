@@ -137,9 +137,13 @@ void Image::getRGBs(unsigned char* _reds, unsigned char* _greens, unsigned char*
 void Image::getImageHistograms()
 {
     /// Initialize histograms 
-    histoR[255] = {0};
-    histoG[255] = {0};
-    histoB[255] = {0};  
+    for(int i = 0; i <256; i++)
+    {
+        histoR[i] = 0;
+        histoG[i] = 0;
+        histoB[i] = 0;
+        //std::cout<<histoR[i]<<" "<<histoG[i]<<" "<<histoB[i]<<std::endl;
+    } 
     
     int size = width * height;
     int i;
@@ -149,12 +153,52 @@ void Image::getImageHistograms()
         histoG[(int)greens[i]]++;
         histoB[(int)blues[i]]++;
     }
+    
 
     /*std::cout<<"------"<<std::endl;
     for(int i = 0; i <=255; i++)
     {
         std::cout<<histoR[i]<<" "<<histoG[i]<<" "<<histoB[i]<<std::endl;
     }*/
+}
+
+int Image::equalization(unsigned char* outred, unsigned char* outgreen, unsigned char* outblue)
+{
+    int size = width * height;
+    int funcR[256], funcG[256], funcB[256];    
+    for(int i = 0; i <256; i++)
+    {
+        funcR[i] = 0;
+        funcG[i] = 0;
+        funcB[i] = 0;
+        //std::cout<<funcR[i]<<" "<<funcG[i]<<" "<<funcB[i]<<std::endl;
+    }
+
+    int gatherR = histoR[0];
+    int gatherG = histoG[0];
+    int gatherB = histoB[0];
+    
+    for (int i = 1 ; i <255; i++){
+        funcR[i] = 255*gatherR/size;
+        funcG[i] = 255*gatherG/size;
+        funcB[i] = 255*gatherB/size;
+        gatherR += histoR[i];
+        gatherG += histoG[i];
+        gatherB += histoB[i];
+    }
+    funcR[255] = funcG[255] = funcB[255] = 255;
+    std::cout<<"3 ";    
+
+    for(int i = 0; i <256; i++)
+    {        
+        std::cout<<funcR[i]<<" "<<funcG[i]<<" "<<funcB[i]<<std::endl;
+    }
+
+    for (int j = 0; j<size; j++){
+        outred[j] = funcR[(int)reds[j]];
+        outgreen[j] = funcG[(int)greens[j]];
+        outblue[j] = funcB[(int)blues[j]];
+    }
 }
 
 void Image::showImage()
@@ -326,7 +370,6 @@ void Image::saveImage(std::string name)
         std::cout << name << "Something went wrong with the file " <<name << "\n";
     } 
 }
-
 
 int Image::gamma(unsigned char* outred, unsigned char* outgreen, unsigned char* outblue, float gamma)
 {
