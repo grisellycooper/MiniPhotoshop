@@ -1,14 +1,14 @@
+#include <iostream>
 #include <string>
-#include <vector>
-#include "opencv2/core/core.hpp"
+#include <fstream>
+#include <opencv2/opencv.hpp>
 
-using namespace std;
-using namespace cv;
+//** This class deals specifically with BMP files **//
 
-//** FILE HEADER **//
+//** BMP FILE HEADER **//
 struct BMPSignature
 {
-    unsigned char data[2]; //equal to the string 'BM'
+    unsigned char data[2];      //contain 'BM' string
     BMPSignature() { data[0] = data[1] = 0; }
 };
 
@@ -23,27 +23,28 @@ struct BMPHeader
 }; 
 
 //** FILE HEADER **//
-struct infoHeader
+struct InfoHeader
 {
-    unsigned int    bmpSize;             //number of bytes required
-    unsigned int    bmpWidth;            //width in pixels
-    unsigned int    bmpHeight;           //height in pixels
-                                         //if positive, it is a bottom-up DIB and its origin is the lower left corner
-                                         //if negative, it is a top-down DIB and its origin is the upper left corner
-    unsigned short  bmpPlanes;           //number of color planes; must be 1
-    unsigned short  bmpBitCount;         //number of bit per pixel; must be 1, 4, 8, 16, 24, or 32
-    unsigned int    bmpCompression;      //type of compression
-    unsigned int    bmpSizeImage;        //size of image in bytes
-    int             bmpXPelsPerMeter;    //number of pixels per meter in x axis
-    int             bmpYPelsPerMeter;    //number of pixels per meter in y axis
+    unsigned int    bmpSize;             /// number of bytes required
+    unsigned int    bmpWidth;            /// width in pixels
+    unsigned int    bmpHeight;           /// height in pixels
+                                         /// if positive, it is a bottom-up DIB and its origin is the lower left corner
+                                         /// if negative, it is a top-down DIB and its origin is the upper left corner
+    unsigned short  bmpPlanes;           /// number of color planes; must be 1
+    unsigned short  bmpBitCount;         /// number of bit per pixel; must be 1, 4, 8, 16, 24, or 32
+    unsigned int    bmpCompression;      /// type of compression
+    unsigned int    bmpSizeImage;        /// size of image in bytes
+    int             bmpXPelsPerMeter;    /// number of pixels per meter in x axis
+    int             bmpYPelsPerMeter;    /// number of pixels per meter in y axis
     
-    //both set to 256, while 16 and 24-bit images will set them to 0
-    unsigned int    bmpClrUsed;          //number of colors used
-    unsigned int    bmpClrImportant;     //number of colors that are important
-    infoHeader(): bmpSize(0), bmpWidth(0), bmpHeight(0), bmpPlanes(0), bmpBitCount(0), bmpCompression(0), bmpSizeImage(0), bmpXPelsPerMeter(0), bmpYPelsPerMeter(0), bmpClrUsed(0), bmpClrImportant(0) { }
+    ///both set to 256, while 16 and 24-bit images will set them to 0
+    unsigned int    bmpClrUsed;          /// number of colors used
+    unsigned int    bmpClrImportant;     /// number of colors that are important
+    InfoHeader(): bmpSize(0), bmpWidth(0), bmpHeight(0), bmpPlanes(0), bmpBitCount(0), bmpCompression(0), bmpSizeImage(0), bmpXPelsPerMeter(0), bmpYPelsPerMeter(0), bmpClrUsed(0), bmpClrImportant(0) { }
 };
 
-struct Pxl
+//** PIXEL STRUCTURE **//
+struct Pixel
 {
     unsigned char blue;
     unsigned char green;
@@ -53,27 +54,28 @@ struct Pxl
 class Image
 {
     private:
-        BMPSignature sig; 
-        BMPHeader fileheader;
-        infoHeader infoheader; 
-        int width;
+        BMPSignature signature;                 /// BMP File Info 
+        BMPHeader fileHeader;
+        InfoHeader infoHeader; 
+        int width;                              /// Image features
         int height;
         int depth; 
-        unsigned char* reds;
+        unsigned char* reds;                    /// Image data
         unsigned char* greens;
         unsigned char* blues;
-        Mat originalImage;
-        Mat outputImage;      
+        cv::Mat originalImage;     
    
     public:
-        Image(string name);                     /// To read
+        Image(std::string name);                     /// To read
         Image(int _width, int _height);         /// To write    
         ~Image();
-
-        void saveImage(string savePath);
+        
+        void ReadHeader(std::ifstream &fin, BMPSignature &sig, BMPHeader &header);
+        void ReadInfoHeader(std::ifstream &fin, InfoHeader &infoH);
         int getImageSize();
         int getImageWidth();
         int getImageHeight();
+        void saveImage(std::string savePath);
         void showImage();
         void showImage(unsigned char* img);
         void showImage(unsigned char *_reds, unsigned char *_greens, unsigned char *_blues);

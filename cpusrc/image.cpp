@@ -2,102 +2,40 @@
 #include <string>
 #include <vector>
 #include <fstream>
-#include <stdio.h>
-#include <string.h>
-#include "opencv2/core/core.hpp"
-#include "opencv2/features2d/features2d.hpp"
-#include "opencv2/highgui/highgui.hpp"
 #include <opencv2/opencv.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include "../include/image.h"
 #include <omp.h>
-
-using namespace std;
-using namespace cv;
-
-void ReadHeader(ifstream &fin, BMPSignature &sig, BMPHeader &header)
-{
-    if(!fin)
-        return;
-
-    fin.seekg(0, ios::beg); //skipping the  first 'BM'
-    fin.read((char*) &sig, sizeof(sig));
-    fin.read((char*) &header, sizeof(header));
-}
-
-void ReadInfoHeader(ifstream &fin, infoHeader &infoH)
-{
-    if (!fin)
-        return;
-
-    fin.seekg(0, ios::beg);
-    fin.read((char*) &infoH, sizeof(infoH));
-}
-
-void PrintHeader(BMPSignature sig, BMPHeader header)
-{
-    cout << "BMP HEADER"    << endl;
-    cout << "Signature  : " << sig.data[0] << sig.data[1] << endl;
-    cout << "File Size  : " << header.fileSize << " byte(s)" << endl;
-    cout << "Reserved1  : " << header.reserved1 << endl;
-    cout << "Reserved2  : " << header.reserved2 << endl;
-    cout << "Data Offset: " << header.dataOffset << " byte(s)" << endl;
-}
- 
-void PrintInfoH(infoHeader infoH)
-{
-    cout << endl;
-    cout << "INFO HEADER"                   << endl;
-    cout << "Size: "                        << infoH.bmpSize << " byte(s)" << endl;
-    cout << "Width: "                       << infoH.bmpWidth << " pixel(s)" << endl;
-    cout << "Height: "                      << infoH.bmpHeight << " pixel(s)" << endl;
-    cout << "Planes: "                      << infoH.bmpPlanes << endl;
-    cout << "Bit Count: "                   << infoH.bmpBitCount << endl;
-    cout << "Type of Compression: "         << infoH.bmpCompression << endl;
-    cout << "Size of Image: "               << infoH.bmpSizeImage << " byte(s)" << endl;
-    cout << "Pixels per Meter in X Axis: "  << infoH.bmpXPelsPerMeter << endl;
-    cout << "Pixels per Meter in Y Axis: "  << infoH.bmpYPelsPerMeter << endl;
-    cout << "Colors Used: "                 << infoH.bmpClrUsed << endl;
-    cout << "Important Colours: "           << infoH.bmpClrImportant << endl;
-}
+#include "../include/image.h"
 
 Image::Image(int _width, int _height)
 {
     width = _width;
     height = _height;
-    /*for (int i=0; i < (width*height); i++)
-    {
-        pixelsList.push_back(new Pixel(0, 0, 0));
-    }*/
 }
 
-Image::Image(string imageDir)
+Image::Image(std::string imageDir)
 {    
-    ifstream fin(imageDir, ios::binary);    
-    //BMPSignature sig;    
-    fin.read((char*)&sig, sizeof(sig));    
-    if (sig.data[0] == 'B' && sig.data[1] == 'M') { 
-        cout<<"File BMP found in: "<< imageDir<<endl;       
-        //BMPHeader fileheader;
-        //infoHeader infoheader;
-        fin.read((char*)&fileheader, sizeof(fileheader));
-        fin.read((char*)&infoheader, sizeof(infoheader));
+    std::ifstream fin(imageDir, std::ios::binary);    
+    fin.read((char*)&signature, sizeof(signature));    
+    if (signature.data[0] == 'B' && signature.data[1] == 'M') { 
+        std::cout<<"File BMP found in: "<< imageDir<<std::endl;       
+        fin.read((char*)&fileHeader, sizeof(fileHeader));
+        fin.read((char*)&infoHeader, sizeof(infoHeader));
 
         //PrintHeader(sig, fileheader);
         //PrintInfoH(infoheader);
-        cout<<endl;
+        //std::cout<<std::endl;
 
-        width = infoheader.bmpWidth;
-        height = infoheader.bmpHeight;
-        cout<<"Size: "<<width <<" * " <<height<<endl;
+        width = infoHeader.bmpWidth;
+        height = infoHeader.bmpHeight;
+        std::cout<<"Size: "<<width <<" * " <<height<<std::endl;
     
-        fin.seekg(fileheader.dataOffset, fin.beg);
+        fin.seekg(fileHeader.dataOffset, fin.beg);
         int PaddingBytesPerRow = (3 - ((width * 3) % 3)) % 3; //not sure
-        //cout<<"Padding: "<<PaddingBytesPerRow <<endl;
-        Pxl pxl;
-        int index = 0;
-        //image.resize(width*height);
+        //std::cout<<"Padding: "<<PaddingBytesPerRow <<std::endl;
 
+        Pixel pxl;
+        int index = 0;
+        
         //Instanciate RGB arrays
         reds = new unsigned char[width*height];
         greens = new unsigned char[width*height];
@@ -107,13 +45,12 @@ Image::Image(string imageDir)
             for (unsigned int x = 0; x < width; x++) {
                 fin.read((char*)&pxl, sizeof(pxl));
                 index = (y_ * width) + x;
-                //cout <<index <<" ";
-                //cout <<index <<" - RGB" <<" " << (int)pxl.red <<" "<< (int)pxl.green <<" "<< (int)pxl.blue<<endl;
+                //std::cout <<index <<" ";
+                //std::cout <<index <<" - RGB" <<" " << (int)pxl.red <<" "<< (int)pxl.green <<" "<< (int)pxl.blue<<std::endl;
                 //pixelsList.push_back(new Pixel((int)pxl.blue, (int)pxl.green, (int)pxl.red));
                 reds[index] = pxl.red;
                 greens[index] = pxl.green;
-                blues[index] = pxl.blue;
-                //index++; 
+                blues[index] = pxl.blue;                
             }
             fin.seekg(PaddingBytesPerRow, fin.cur);
         }
@@ -128,67 +65,87 @@ Image::~Image()
     delete blues;    
 }
 
+void Image::ReadHeader(std::ifstream &fin, BMPSignature &sig, BMPHeader &header)
+{
+    if(!fin)
+        return;
+
+    fin.seekg(0, std::ios::beg); //skipping the  first 'BM'
+    fin.read((char*) &sig, sizeof(sig));
+    fin.read((char*) &header, sizeof(header));
+}
+
+void Image::ReadInfoHeader(std::ifstream &fin, InfoHeader &infoH)
+{
+    if (!fin)
+        return;
+
+    fin.seekg(0, std::ios::beg);
+    fin.read((char*) &infoH, sizeof(infoH));
+}
+
 void Image::showImage()
 {
     //Display image with OpenCV    
-    Mat chan[3] = {
-        Mat(height,width,CV_8UC1,blues),
-        Mat(height,width,CV_8UC1,greens),
-        Mat(height,width,CV_8UC1,reds)};
+    cv::Mat chan[3] = {
+        cv::Mat(height,width,CV_8UC1,blues),
+        cv::Mat(height,width,CV_8UC1,greens),
+        cv::Mat(height,width,CV_8UC1,reds)};
        
     originalImage;
     merge(chan,3,originalImage);
     if(!originalImage.data ) {
-        cout <<"Something went wrong with image!" << endl ;
+        std::cout <<"Something went wrong with image!" << std::endl ;
         return;
     }
   
-    namedWindow("Original Image", WINDOW_NORMAL);
+    cv::namedWindow("Original Image", cv::WINDOW_NORMAL);
     imshow("Original Image", originalImage);        
     
-    waitKey(0);
+    cv::waitKey(0);
 }
 
 void Image::showImage(unsigned char *img)
 {
-    Mat image = Mat(height, width,CV_8UC1, img);
+    cv::Mat image = cv::Mat(height, width,CV_8UC1, img);
     //Display image with OpenCV    
     if(!image.data ) {
-        cout <<"Something went wrong when displaying image!" << endl ;
+        std::cout <<"Something went wrong when displaying image!" << std::endl ;
         return;
     }
   
-    namedWindow("Image", WINDOW_NORMAL);
+    cv::namedWindow("Image", cv::WINDOW_NORMAL);
     imshow("Image", image);        
     
-    waitKey(0);
+    cv::waitKey(0);
 }
 
 void Image::showImage(unsigned char *_reds, unsigned char *_greens, unsigned char *_blues)
 {
     //Display image with OpenCV    
-    Mat chan[3] = {
-        Mat(height,width,CV_8UC1,_blues),
-        Mat(height,width,CV_8UC1,_greens),
-        Mat(height,width,CV_8UC1,_reds)};
+    cv::Mat chan[3] = {
+        cv::Mat(height,width,CV_8UC1,_blues),
+        cv::Mat(height,width,CV_8UC1,_greens),
+        cv::Mat(height,width,CV_8UC1,_reds)};
        
-    Mat resultImage;
+    cv::Mat resultImage;
     merge(chan,3,resultImage);
     if(!resultImage.data ) {
-        cout <<"Something went wrong with result image!" << endl ;
+        std::cout <<"Something went wrong with result image!" << std::endl ;
         return;
     }
   
-    namedWindow("Image", WINDOW_NORMAL);
+    cv::namedWindow("Image", cv::WINDOW_NORMAL);
+    //resizeWindow("Image",width, height);
     imshow("Image", resultImage);        
     
-    waitKey(0);
+    cv::waitKey(0);
 }
 
 void Image::showHistogram()
 {    
-  /// Separate the image in 3 places ( B, G and R )
-  vector<Mat> bgr_planes;
+  /// Separate the image in 3 chanels
+  std::vector<cv::Mat> bgr_planes;
   split( originalImage, bgr_planes );
 
   /// Establish the number of bins
@@ -200,48 +157,48 @@ void Image::showHistogram()
 
   bool uniform = true; bool accumulate = false;
 
-  Mat b_hist, g_hist, r_hist;
+  cv::Mat b_hist, g_hist, r_hist;
 
   /// Compute the histograms:
-  calcHist( &bgr_planes[0], 1, 0, Mat(), b_hist, 1, &histSize, &histRange, uniform, accumulate );
-  calcHist( &bgr_planes[1], 1, 0, Mat(), g_hist, 1, &histSize, &histRange, uniform, accumulate );
-  calcHist( &bgr_planes[2], 1, 0, Mat(), r_hist, 1, &histSize, &histRange, uniform, accumulate );
+  calcHist( &bgr_planes[0], 1, 0, cv::Mat(), b_hist, 1, &histSize, &histRange, uniform, accumulate );
+  calcHist( &bgr_planes[1], 1, 0, cv::Mat(), g_hist, 1, &histSize, &histRange, uniform, accumulate );
+  calcHist( &bgr_planes[2], 1, 0, cv::Mat(), r_hist, 1, &histSize, &histRange, uniform, accumulate );
 
   // Draw the histograms for B, G and R
   int hist_w = 512; int hist_h = 400;
   int bin_w = cvRound( (double) hist_w/histSize );
 
-  Mat histImage( hist_h, hist_w, CV_8UC3, Scalar( 0,0,0) );
+  cv::Mat histImage( hist_h, hist_w, CV_8UC3, cv::Scalar( 0,0,0) );
 
   /// Normalize the result to [ 0, histImage.rows ]
-  normalize(b_hist, b_hist, 0, histImage.rows, NORM_MINMAX, -1, Mat() );
-  normalize(g_hist, g_hist, 0, histImage.rows, NORM_MINMAX, -1, Mat() );
-  normalize(r_hist, r_hist, 0, histImage.rows, NORM_MINMAX, -1, Mat() );
+  normalize(b_hist, b_hist, 0, histImage.rows, cv::NORM_MINMAX, -1, cv::Mat() );
+  normalize(g_hist, g_hist, 0, histImage.rows, cv::NORM_MINMAX, -1, cv::Mat() );
+  normalize(r_hist, r_hist, 0, histImage.rows, cv::NORM_MINMAX, -1, cv::Mat() );
 
   /// Draw for each channel
   for( int i = 1; i < histSize; i++ )
   {
-      line( histImage, Point( bin_w*(i-1), hist_h - cvRound(b_hist.at<float>(i-1)) ) ,
-                       Point( bin_w*(i), hist_h - cvRound(b_hist.at<float>(i)) ),
-                       Scalar( 255, 0, 0), 2, 8, 0  );
-      line( histImage, Point( bin_w*(i-1), hist_h - cvRound(g_hist.at<float>(i-1)) ) ,
-                       Point( bin_w*(i), hist_h - cvRound(g_hist.at<float>(i)) ),
-                       Scalar( 0, 255, 0), 2, 8, 0  );
-      line( histImage, Point( bin_w*(i-1), hist_h - cvRound(r_hist.at<float>(i-1)) ) ,
-                       Point( bin_w*(i), hist_h - cvRound(r_hist.at<float>(i)) ),
-                       Scalar( 0, 0, 255), 2, 8, 0  );
+      line( histImage, cv::Point( bin_w*(i-1), hist_h - cvRound(b_hist.at<float>(i-1)) ) ,
+                       cv::Point( bin_w*(i), hist_h - cvRound(b_hist.at<float>(i)) ),
+                       cv::Scalar( 255, 0, 0), 2, 8, 0  );
+      line( histImage, cv::Point( bin_w*(i-1), hist_h - cvRound(g_hist.at<float>(i-1)) ) ,
+                       cv::Point( bin_w*(i), hist_h - cvRound(g_hist.at<float>(i)) ),
+                       cv::Scalar( 0, 255, 0), 2, 8, 0  );
+      line( histImage, cv::Point( bin_w*(i-1), hist_h - cvRound(r_hist.at<float>(i-1)) ) ,
+                       cv::Point( bin_w*(i), hist_h - cvRound(r_hist.at<float>(i)) ),
+                       cv::Scalar( 0, 0, 255), 2, 8, 0  );
   }
 
   /// Display
-  namedWindow("calcHist Demo", WINDOW_NORMAL );
+  cv::namedWindow("calcHist Demo", cv::WINDOW_NORMAL );
   imshow("calcHist Demo", histImage );
 
-  waitKey(0);
+  cv::waitKey(0);
 
   return ;
 }
 
-void Image::saveImage(string name)
+void Image::saveImage(std::string name)
 {
     /*ofstream fout(name, ios::out | ios::binary);    
     fout.write((char*)&sig, sizeof(sig));   
@@ -258,7 +215,7 @@ void Image::saveImage(string name)
             pxl.red = reds[index];
             pxl.green = greens[index];
 
-            //cout <<index <<" - RGB" <<" " << (int)pxl.red <<" "<< (int)pxl.green <<" "<< (int)pxl.blue<<endl;
+            //std::cout <<index <<" - RGB" <<" " << (int)pxl.red <<" "<< (int)pxl.green <<" "<< (int)pxl.blue<<std::endl;
 
             fout.write((char *)&pxl, sizeof(pxl));            
         }
@@ -271,7 +228,7 @@ void Image::saveImage(string name)
         }
     }
     fout.close();  */
-    ofstream image(name);
+    std::ofstream image(name);
     //Pixel *pixel = NULL;
     //Pxl pxl;
     int r,g,b = 0;
@@ -293,7 +250,7 @@ void Image::saveImage(string name)
             image << "\n";
         }
     } else {
-        cout << name << "Something went wrong with the file " <<name << "\n";
+        std::cout << name << "Something went wrong with the file " <<name << "\n";
     } 
 }
 
@@ -333,9 +290,9 @@ int Image::sobel(unsigned char* in, unsigned char* out)
     for (int i = 0; i<height+2;i++){
         for(int j = 0; j<width+2;j++){
             matrix[i][j] = 0;
-            //cout<<(int)matrix[i][j]<<" ";
+            //std::cout<<(int)cv::Matrix[i][j]<<" ";
         }
-        //cout<<endl;
+        //std::cout<<std::endl;
     }
 
     int index;
@@ -343,19 +300,19 @@ int Image::sobel(unsigned char* in, unsigned char* out)
         for(int j = 0; j<width;j++){
             index = width*i+j;
             matrix[i+1][j+1] = in[index];
-            //cout<<(int)matrix[i+1][j+1]<<" ";
+            //std::cout<<(int)cv::Matrix[i+1][j+1]<<" ";
         }
-        //cout<<endl;
+        //std::cout<<std::endl;
     }
 
     /*for (int i = 0; i<height+2;i++){
         for(int j = 0; j<width+2;j++){
-            cout<<(int)matrix[i][j]<<" ";
+            std::cout<<(int)cv::Matrix[i][j]<<" ";
         }
-        cout<<endl;
+        std::cout<<std::endl;
     }*/
 
-    //cout<<endl;
+    //std::cout<<std::endl;
     int x, y, xy;
     for (int h = 1; h < height+1; h++){
         for (int w = 1; w < width+1; w++){
@@ -367,27 +324,27 @@ int Image::sobel(unsigned char* in, unsigned char* out)
                 +(matrix[h+1][w-1]*gy[2][0])+(matrix[h+1][w]*gy[2][1])+(matrix[h+1][w+1]*gy[2][2]);
             xy = abs(x)+abs(y);
             //xy = sqrt(pow(x,2)+pow(y,2));   
-            //cout<<x<<" ";
+            //std::cout<<x<<" ";
             //out[index] = xy>255 ? 255 : xy;
             if(xy < 0) xy = 0;
             if(xy > 255) xy = 255;  
             out[index] = xy;  
-            //cout<<(int)out[index]<<" ";
+            //std::cout<<(int)out[index]<<" ";
         }
     }
 
     /*for (int i = 0; i<height;i++){
         for(int j = 0; j<width;j++){
-            cout<<(int)out[i*width+j]<<" ";
+            std::cout<<(int)out[i*width+j]<<" ";
         }
-        cout<<endl;
+        std::cout<<std::endl;
     }*/
     return 0;
 }
 
 int Image::maximo(unsigned char* max_red, unsigned char* max_green, unsigned char* max_blue, int k)
 {
-    //** original matrices are augmented and filled with 0 **//
+    //** original cv::Matrices are augmented and filled with 0 **//
     //** they're augmented acording to parameter k **//
     int nHeight = height + 2*k;
     int nWidth = width + 2*k;
@@ -405,20 +362,20 @@ int Image::maximo(unsigned char* max_red, unsigned char* max_green, unsigned cha
     }
     
     //** Copy array to matrix **// 
-    int index; //1D Array index
+    int index;          /// 1D Array index
     for (int i = 0; i<height;i++){
         for(int j = 0; j<width;j++){
             index = width*i+j;
             mred[i+k][j+k] = reds[index];
             mgreen[i+k][j+k] = greens[index];
             mblue[i+k][j+k] = blues[index];
-            //cout<<(int)matrix[i+1][j+1]<<" ";
+            //std::cout<<(int)cv::Matrix[i+1][j+1]<<" ";
         }
-        //cout<<endl;
+        //std::cout<<std::endl;
     }
-    //cout<<endl;
+    //std::cout<<std::endl;
     
-    vector<int> tmpr, tmpg, tmpb;
+    std::vector<int> tmpr, tmpg, tmpb;
     //** Convolve matrix **//    
     for (int h = k; h < nHeight-k; h++){
         for (int w = k; w < nWidth-k; w++){            
@@ -439,4 +396,31 @@ int Image::maximo(unsigned char* max_red, unsigned char* max_green, unsigned cha
     }
 
     return 0;    
+}
+
+void PrintHeader(BMPSignature sig, BMPHeader header)
+{
+    std::cout << "BMP HEADER"    << std::endl;
+    std::cout << "Signature  : " << sig.data[0] << sig.data[1] << std::endl;
+    std::cout << "File Size  : " << header.fileSize << " byte(s)" << std::endl;
+    std::cout << "Reserved1  : " << header.reserved1 << std::endl;
+    std::cout << "Reserved2  : " << header.reserved2 << std::endl;
+    std::cout << "Data Offset: " << header.dataOffset << " byte(s)" << std::endl;
+}
+
+void PrintInfoH(InfoHeader infoH)
+{
+    std::cout << std::endl;
+    std::cout << "INFO HEADER"                   << std::endl;
+    std::cout << "Size: "                        << infoH.bmpSize << " byte(s)" << std::endl;
+    std::cout << "Width: "                       << infoH.bmpWidth << " pixel(s)" << std::endl;
+    std::cout << "Height: "                      << infoH.bmpHeight << " pixel(s)" << std::endl;
+    std::cout << "Planes: "                      << infoH.bmpPlanes << std::endl;
+    std::cout << "Bit Count: "                   << infoH.bmpBitCount << std::endl;
+    std::cout << "Type of Compression: "         << infoH.bmpCompression << std::endl;
+    std::cout << "Size of Image: "               << infoH.bmpSizeImage << " byte(s)" << std::endl;
+    std::cout << "Pixels per Meter in X Axis: "  << infoH.bmpXPelsPerMeter << std::endl;
+    std::cout << "Pixels per Meter in Y Axis: "  << infoH.bmpYPelsPerMeter << std::endl;
+    std::cout << "Colors Used: "                 << infoH.bmpClrUsed << std::endl;
+    std::cout << "Important Colours: "           << infoH.bmpClrImportant << std::endl;
 }

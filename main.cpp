@@ -1,10 +1,6 @@
 #include <iostream>
+#include <string>
 #include "include/image.h"
-#include "opencv2/core/core.hpp"
-#include "opencv2/features2d/features2d.hpp"
-#include "opencv2/highgui/highgui.hpp"
-
-using namespace cv;
 
 int main(int argc, char* argv[]){
     /// Time counting
@@ -16,6 +12,7 @@ int main(int argc, char* argv[]){
     
     //inputImagePath = argv[1];           /// Input path        
     inputImagePath = "../media/Garfield-Portada.bmp";
+    
     /// Read image
     start = clock();
     Image *image(new Image(inputImagePath));
@@ -26,21 +23,21 @@ int main(int argc, char* argv[]){
     image->showImage();
     //image->showHistogram();
 
-    //unsigned char *gs = new unsigned char[image->getImageSize()];
-    //start = clock();
-    //image->grayScale(gs);
-    //end = clock();
-    //std::cout<<"Converting to GrayScale: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
-    //image->showImage(gs);    
+    //** GrayScale **//
+    unsigned char *gs = new unsigned char[image->getImageSize()];
+    start = clock();
+    image->grayScale(gs);
+    end = clock();
+    std::cout<<"Converting to GrayScale: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
+    image->showImage(gs);    
 
     //** Sobel Filter / Detector de bordes **//
-    //unsigned char *sobel = new unsigned char[image->getImageSize()];
-    //unsigned char sobel[image->getImageSize()] = {0};
-    //start = clock();
-    //image->sobel(gs, sobel);
-    //end = clock();
-    //std::cout<<"Sobel Filtering: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
-    //image->showImage(sobel);
+    unsigned char *sobel = new unsigned char[image->getImageSize()];
+    start = clock();
+    image->sobel(gs, sobel);
+    end = clock();
+    std::cout<<"Sobel Filtering: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
+    image->showImage(sobel);
 
     //** Maximun Filter **//
     unsigned char *max_red = new unsigned char[image->getImageSize()];    
@@ -53,16 +50,3 @@ int main(int argc, char* argv[]){
     std::cout<<"Max Filter: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
     image->showImage(max_red, max_green, max_blue);   
 }
-
-/*#include <QApplication>
-#include <QPushButton>
-
-int main(int argc, char **argv)
-{
-    QApplication app (argc, argv);
-
-    QPushButton button ("Hello world !");
-    button.show();
-
-    return app.exec();
-}*/
