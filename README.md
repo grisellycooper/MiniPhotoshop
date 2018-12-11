@@ -6,11 +6,14 @@ Result testing images are located in TestEditor folder.
 
 ## Compile
 mkdir build && cd build
+
 cmake.. && make
+
 ./photoeditor
 
-Note: Diferent execution modes are explained in code itself.
 
+Note: Different run modes are explained in the code itself.
 
+--------------------------------------
 A nice UI will be implemented soon :D
 
