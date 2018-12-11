@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 #include "include/image.h"
 
-#define bCuda = true
+bool bCuda = true;
 
 ///**************** CUDA useful functiions *****************///
 /// Useful to read Error from CUDA Calls
@@ -27,10 +27,10 @@ extern "C" void  executeKernelGrayScale(
 	unsigned char* h_outgs, unsigned char* d_inred, unsigned char* d_ingreen, unsigned char* d_inblue,
     unsigned char* d_outgs, int imageSize, size_t sizePixelsArray);
 
-extern "C" void  executeKernelBinary( 
+/*extern "C" void  executeKernelBinary( 
 	unsigned char* d_inred, unsigned char* d_ingreen, unsigned char* d_inblue, unsigned char* h_outbinary, 
     unsigned char* d_outbinary, int imageSize, size_t sizePixelsArray, int threshold);
-
+ */
 
 ///////////////////////////////////////////////////////////////
 /// CPU functions                                           ///
@@ -104,145 +104,115 @@ void cudaInvert(Image *image){
     CUDA_CALL(cudaFree(d_outblue));
 }
 
-// void cudaGrayScale(Image *image){
-//     //********* CUDA things **********//
-//     /// init device
-// 	//cudaSetDevice(0);
-// 	cudaDeviceSynchronize();
-// 	cudaThreadSynchronize();
+void cudaGrayScale(Image *image){
+     //********* CUDA things **********//
+     /// init device
+ 	//cudaSetDevice(0);
+ 	cudaDeviceSynchronize();
+ 	cudaThreadSynchronize();
         
-//     int imageSize = image->getImageSize();
-//     size_t sizePixelsArray = imageSize * sizeof(unsigned char);
-//     float gamma = 4.0f;
+     int imageSize = image->getImageSize();
+     size_t sizePixelsArray = imageSize * sizeof(unsigned char);
 
-//     /// Allocate memory           
-//     /// Host: Initial RGB values. Output RGB values
-//     unsigned char *h_inred = (unsigned char *)malloc(sizePixelsArray);
-//     unsigned char *h_ingreen = (unsigned char *)malloc(sizePixelsArray);
-//     unsigned char *h_inblue = (unsigned char *)malloc(sizePixelsArray);
-//     unsigned char *h_outred = (unsigned char *)malloc(sizePixelsArray);
-//     unsigned char *h_outgreen = (unsigned char *)malloc(sizePixelsArray);
-//     unsigned char *h_outblue = (unsigned char *)malloc(sizePixelsArray);    
-//     //float *h_gamma = (float *)malloc(sizeof(float));
+     /// Allocate memory           
+     /// Host: Initial RGB values. Output RGB values
+     unsigned char *h_inred = (unsigned char *)malloc(sizePixelsArray);
+     unsigned char *h_ingreen = (unsigned char *)malloc(sizePixelsArray);
+     unsigned char *h_inblue = (unsigned char *)malloc(sizePixelsArray);
+     unsigned char *h_outgs = (unsigned char *)malloc(sizePixelsArray);
+     
+     image->getRGBs(h_inred, h_ingreen, h_inblue);
 
-//     image->getRGBs(h_inred, h_ingreen, h_inblue);
+     /*printf("\n -host\n");
+     for(int i = 0; i < 5 ; i++){
+         printf("%d %d %d\n", (int)h_inred[i], (int)h_ingreen[i], (int)h_inblue[i] ); 
+     }*/
 
-//     /*printf("\n -host\n");
-//     for(int i = 0; i < 5 ; i++){
-//         printf("%d %d %d\n", (int)h_inred[i], (int)h_ingreen[i], (int)h_inblue[i] ); 
-//     }*/
+    /// Device: Initial RGB values. Output RGB values
+    unsigned char *d_inred, *d_ingreen, *d_inblue;
+    unsigned char *d_outgs;
 
-//     /// Device: Initial RGB values. Output RGB values
-// 	unsigned char *d_inred, *d_ingreen, *d_inblue;
-//     unsigned char *d_outred, *d_outgreen, *d_outblue;
-//     //float *d_gamma;
+     CUDA_CALL(cudaMalloc((void**) &d_inred, sizePixelsArray));
+     CUDA_CALL(cudaMalloc((void**) &d_ingreen, sizePixelsArray));
+     CUDA_CALL(cudaMalloc((void**) &d_inblue, sizePixelsArray));
+     CUDA_CALL(cudaMalloc((void**) &d_outgs, sizePixelsArray));
+     
+     /// Copy host to device
+     CUDA_CALL(cudaMemcpy(d_inred, h_inred, sizePixelsArray, cudaMemcpyHostToDevice));
+     CUDA_CALL(cudaMemcpy(d_ingreen, h_ingreen, sizePixelsArray, cudaMemcpyHostToDevice));
+     CUDA_CALL(cudaMemcpy(d_inblue, h_inblue, sizePixelsArray, cudaMemcpyHostToDevice));
+     CUDA_CALL(cudaMemcpy(d_outgs, h_outgs, sizePixelsArray, cudaMemcpyHostToDevice));
+     
+     /// Execute Kernel
+     executeKernelGrayScale(h_outgs, d_inred, d_ingreen, d_inblue, d_outgs, imageSize, sizePixelsArray);
+     
+     image->showImage(h_outgs); 
+     /// Free space
+     free(h_inred);
+     free(h_ingreen);
+     free(h_inblue);
+     free(h_outgs);
+     
+     CUDA_CALL(cudaFree(d_inred));
+     CUDA_CALL(cudaFree(d_ingreen));
+     CUDA_CALL(cudaFree(d_inblue));
+     CUDA_CALL(cudaFree(d_outgs));     
+}
 
-//     CUDA_CALL(cudaMalloc((void**) &d_inred, sizePixelsArray));
-//     CUDA_CALL(cudaMalloc((void**) &d_ingreen, sizePixelsArray));
-//     CUDA_CALL(cudaMalloc((void**) &d_inblue, sizePixelsArray));
-//     CUDA_CALL(cudaMalloc((void**) &d_outred, sizePixelsArray));
-//     CUDA_CALL(cudaMalloc((void**) &d_outgreen, sizePixelsArray));
-//     CUDA_CALL(cudaMalloc((void**) &d_outblue, sizePixelsArray));
-//     //CUDA_CALL(cudaMalloc((void**) &d_gamma, sizeof(float)));
-    
-//     /// Copy host to device
-//     CUDA_CALL(cudaMemcpy(d_inred, h_inred, sizePixelsArray, cudaMemcpyHostToDevice));
-//     CUDA_CALL(cudaMemcpy(d_ingreen, h_ingreen, sizePixelsArray, cudaMemcpyHostToDevice));
-//     CUDA_CALL(cudaMemcpy(d_inblue, h_inblue, sizePixelsArray, cudaMemcpyHostToDevice));
-//     CUDA_CALL(cudaMemcpy(d_outred, h_outred, sizePixelsArray, cudaMemcpyHostToDevice));
-//     CUDA_CALL(cudaMemcpy(d_outgreen, h_outgreen, sizePixelsArray, cudaMemcpyHostToDevice));
-//     CUDA_CALL(cudaMemcpy(d_outblue, h_outblue, sizePixelsArray, cudaMemcpyHostToDevice));
-    
-//     /// Execute Kernel
-//     executeKernelTransfGamma(h_inred, h_ingreen, h_inblue, h_outred, h_outgreen, h_outblue, 
-//         d_inred, d_ingreen, d_inblue, d_outred, d_outgreen, d_outblue, gamma, imageSize, sizePixelsArray);
-
-//     image->showImage(h_outred, h_outgreen, h_outblue); 
-//     /// Free space
-//     free(h_inred);
-//     free(h_ingreen);
-//     free(h_inblue);
-//     free(h_outred);
-//     free(h_outgreen);
-//     free(h_outblue);
-
-//     CUDA_CALL(cudaFree(d_inred));
-//     CUDA_CALL(cudaFree(d_ingreen));
-//     CUDA_CALL(cudaFree(d_inblue));
-//     CUDA_CALL(cudaFree(d_outred));
-//     CUDA_CALL(cudaFree(d_outgreen));
-//     CUDA_CALL(cudaFree(d_outblue));
-// }
-
-// void cudaBinary(Image *image){
-//     //********* CUDA things **********//
-//     /// init device
-// 	//cudaSetDevice(0);
-// 	cudaDeviceSynchronize();
-// 	cudaThreadSynchronize();
+void cudaBinary(Image *image, int threshold){
+     //********* CUDA things **********//
+     /// init device
+ 	//cudaSetDevice(0);
+ 	cudaDeviceSynchronize();
+ 	cudaThreadSynchronize();
         
-//     int imageSize = image->getImageSize();
-//     size_t sizePixelsArray = imageSize * sizeof(unsigned char);
-//     int threshold = 120;
+     int imageSize = image->getImageSize();
+     size_t sizePixelsArray = imageSize * sizeof(unsigned char);
 
-//     /// Allocate memory           
-//     /// Host: Initial RGB values. Output RGB values
-//     unsigned char *h_inred = (unsigned char *)malloc(sizePixelsArray);
-//     unsigned char *h_ingreen = (unsigned char *)malloc(sizePixelsArray);
-//     unsigned char *h_inblue = (unsigned char *)malloc(sizePixelsArray);
-//     unsigned char *h_outred = (unsigned char *)malloc(sizePixelsArray);
-//     unsigned char *h_outgreen = (unsigned char *)malloc(sizePixelsArray);
-//     unsigned char *h_outblue = (unsigned char *)malloc(sizePixelsArray);    
-//     //float *h_gamma = (float *)malloc(sizeof(float));
+     /// Allocate memory           
+     /// Host: Initial RGB values. Output RGB values
+     unsigned char *h_inred = (unsigned char *)malloc(sizePixelsArray);
+     unsigned char *h_ingreen = (unsigned char *)malloc(sizePixelsArray);
+     unsigned char *h_inblue = (unsigned char *)malloc(sizePixelsArray);
+     unsigned char *h_outgs = (unsigned char *)malloc(sizePixelsArray);
+     
+     image->getRGBs(h_inred, h_ingreen, h_inblue);
 
-//     image->getRGBs(h_inred, h_ingreen, h_inblue);
+     /*printf("\n -host\n");
+     for(int i = 0; i < 5 ; i++){
+         printf("%d %d %d\n", (int)h_inred[i], (int)h_ingreen[i], (int)h_inblue[i] ); 
+     }*/
 
-//     /*printf("\n -host\n");
-//     for(int i = 0; i < 5 ; i++){
-//         printf("%d %d %d\n", (int)h_inred[i], (int)h_ingreen[i], (int)h_inblue[i] ); 
-//     }*/
+    /// Device: Initial RGB values. Output RGB values
+    unsigned char *d_inred, *d_ingreen, *d_inblue;
+    unsigned char *d_outgs;
 
-//     /// Device: Initial RGB values. Output RGB values
-// 	unsigned char *d_inred, *d_ingreen, *d_inblue;
-//     unsigned char *d_outred, *d_outgreen, *d_outblue;
-//     //float *d_gamma;
-
-//     CUDA_CALL(cudaMalloc((void**) &d_inred, sizePixelsArray));
-//     CUDA_CALL(cudaMalloc((void**) &d_ingreen, sizePixelsArray));
-//     CUDA_CALL(cudaMalloc((void**) &d_inblue, sizePixelsArray));
-//     CUDA_CALL(cudaMalloc((void**) &d_outred, sizePixelsArray));
-//     CUDA_CALL(cudaMalloc((void**) &d_outgreen, sizePixelsArray));
-//     CUDA_CALL(cudaMalloc((void**) &d_outblue, sizePixelsArray));
-//     //CUDA_CALL(cudaMalloc((void**) &d_gamma, sizeof(float)));
-    
-//     /// Copy host to device
-//     CUDA_CALL(cudaMemcpy(d_inred, h_inred, sizePixelsArray, cudaMemcpyHostToDevice));
-//     CUDA_CALL(cudaMemcpy(d_ingreen, h_ingreen, sizePixelsArray, cudaMemcpyHostToDevice));
-//     CUDA_CALL(cudaMemcpy(d_inblue, h_inblue, sizePixelsArray, cudaMemcpyHostToDevice));
-//     CUDA_CALL(cudaMemcpy(d_outred, h_outred, sizePixelsArray, cudaMemcpyHostToDevice));
-//     CUDA_CALL(cudaMemcpy(d_outgreen, h_outgreen, sizePixelsArray, cudaMemcpyHostToDevice));
-//     CUDA_CALL(cudaMemcpy(d_outblue, h_outblue, sizePixelsArray, cudaMemcpyHostToDevice));
-    
-//     /// Execute Kernel
-//     executeKernelTransfGamma(h_inred, h_ingreen, h_inblue, h_outred, h_outgreen, h_outblue, 
-//         d_inred, d_ingreen, d_inblue, d_outred, d_outgreen, d_outblue, gamma, imageSize, sizePixelsArray);
-
-//     image->showImage(h_outred, h_outgreen, h_outblue); 
-//     /// Free space
-//     free(h_inred);
-//     free(h_ingreen);
-//     free(h_inblue);
-//     free(h_outred);
-//     free(h_outgreen);
-//     free(h_outblue);
-
-//     CUDA_CALL(cudaFree(d_inred));
-//     CUDA_CALL(cudaFree(d_ingreen));
-//     CUDA_CALL(cudaFree(d_inblue));
-//     CUDA_CALL(cudaFree(d_outred));
-//     CUDA_CALL(cudaFree(d_outgreen));
-//     CUDA_CALL(cudaFree(d_outblue));
-// }
+     CUDA_CALL(cudaMalloc((void**) &d_inred, sizePixelsArray));
+     CUDA_CALL(cudaMalloc((void**) &d_ingreen, sizePixelsArray));
+     CUDA_CALL(cudaMalloc((void**) &d_inblue, sizePixelsArray));
+     CUDA_CALL(cudaMalloc((void**) &d_outgs, sizePixelsArray));
+     
+     /// Copy host to device
+     CUDA_CALL(cudaMemcpy(d_inred, h_inred, sizePixelsArray, cudaMemcpyHostToDevice));
+     CUDA_CALL(cudaMemcpy(d_ingreen, h_ingreen, sizePixelsArray, cudaMemcpyHostToDevice));
+     CUDA_CALL(cudaMemcpy(d_inblue, h_inblue, sizePixelsArray, cudaMemcpyHostToDevice));
+     CUDA_CALL(cudaMemcpy(d_outgs, h_outgs, sizePixelsArray, cudaMemcpyHostToDevice));
+     
+     /// Execute Kernel
+     executeKernelGrayScale(h_outgs, d_inred, d_ingreen, d_inblue, d_outgs, imageSize, sizePixelsArray);
+     
+     image->showImage(h_outgs); 
+     /// Free space
+     free(h_inred);
+     free(h_ingreen);
+     free(h_inblue);
+     free(h_outgs);
+     
+     CUDA_CALL(cudaFree(d_inred));
+     CUDA_CALL(cudaFree(d_ingreen));
+     CUDA_CALL(cudaFree(d_inblue));
+     CUDA_CALL(cudaFree(d_outgs));     
+}
 
 ///////////////////////////////////////////////////////////////
 /// Main function                                           ///
@@ -307,7 +277,10 @@ int main(int argc, char* argv[]){
         {            
             //** Invert **//            
             if(bCuda){
+                start = clock();
                 cudaInvert(image);
+                end = clock();
+                std::cout<<"Invert: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;                
             }
             else{
                 unsigned char *ired = new unsigned char[image->getImageSize()];    
@@ -328,13 +301,21 @@ int main(int argc, char* argv[]){
         case 2:
         {
             //** GrayScale **//
-            unsigned char *gs = new unsigned char[image->getImageSize()];
-            start = clock();
-            image->grayScale(gs);
-            end = clock();
-            std::cout<<"Converting to GrayScale: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
-            image->showImage(gs);    
-            delete(gs);
+            if(bCuda){
+                start = clock();
+                cudaGrayScale(image);
+                end = clock();
+                std::cout<<"Invert: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;                
+            }
+            else{
+                unsigned char *gs = new unsigned char[image->getImageSize()];
+                start = clock();
+                image->grayScale(gs);
+                end = clock();
+                std::cout<<"Converting to GrayScale: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
+                image->showImage(gs);    
+                delete(gs);
+            }
         }
         break;
 
@@ -347,15 +328,23 @@ int main(int argc, char* argv[]){
             if(argv[3] != NULL)
                 threshold = atoi(argv[3]);      /// Getting from command line               
 
-            unsigned char *gs = new unsigned char[image->getImageSize()];                        
-            unsigned char *binary = new unsigned char[image->getImageSize()];    
-            start = clock();                    
-            image->grayScale(gs);              /// Before Binary, get Grayscale
-            image->binary(gs, binary, threshold);
-            end = clock();
-            std::cout<<"Binary: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
-            image->showImage(binary);
-            delete(binary);
+            if(bCuda){
+                start = clock();
+                cudaBinary(image, threshold);
+                end = clock();
+                std::cout<<"Invert: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;                
+            }
+            else{
+                unsigned char *gs = new unsigned char[image->getImageSize()];                        
+                unsigned char *binary = new unsigned char[image->getImageSize()];    
+                start = clock();                    
+                image->grayScale(gs);              /// Before Binary, get Grayscale
+                image->binary(gs, binary, threshold);
+                end = clock();
+                std::cout<<"Binary: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
+                image->showImage(binary);
+                delete(binary);
+            }
         }
         break;
 

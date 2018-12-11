@@ -16,7 +16,7 @@ exit(EXIT_FAILURE);}}
 
 
 __global__ void invert(unsigned char *d_inred, unsigned char *d_ingreen, unsigned char *d_inblue, 
-    unsigned char *d_outred, unsigned char *d_outgreen, unsigned char *d_outblue, float gamma, int imageSize) {  
+    unsigned char *d_outred, unsigned char *d_outgreen, unsigned char *d_outblue, int imageSize) {  
 	// Global thread index
 	int threadID = threadIdx.x + blockIdx.x * blockDim.x;
 	    	  
@@ -66,7 +66,7 @@ extern "C" void  executeKernelInvert(
         printf("%d %d %d\n", (int)d_outred[i], (int)d_outgreen[i], (int)d_outblue[i] ); 
     }*/
     
-    invert<<<gridSize, threadsPerBlock>>>(d_inred, d_ingreen, d_inblue, d_outred, d_outgreen, d_outblue, gamma, imageSize);
+    invert<<<gridSize, threadsPerBlock>>>(d_inred, d_ingreen, d_inblue, d_outred, d_outgreen, d_outblue, imageSize);
 
     CUDA_CALL(cudaMemcpy(h_outred, d_outred, sizePixelsArray,cudaMemcpyDeviceToHost));
     CUDA_CALL(cudaMemcpy(h_outgreen, d_outgreen, sizePixelsArray,cudaMemcpyDeviceToHost));
@@ -80,7 +80,7 @@ extern "C" void  executeKernelInvert(
 
 extern "C" void  executeKernelGrayScale( 
 	unsigned char* h_outgs, unsigned char* d_inred, unsigned char* d_ingreen, unsigned char* d_inblue,
-    unsigned char* d_outgs, int imageSize, size_t sizePixelsArray);{
+    unsigned char* d_outgs, int imageSize, size_t sizePixelsArray){
 
     int threadsPerBlock = 128;
 	printf("MaxThreadsPerBlock:  %d \n", threadsPerBlock);
@@ -93,10 +93,9 @@ extern "C" void  executeKernelGrayScale(
     CUDA_CALL(cudaMemcpy(h_outgs, d_outgs, sizePixelsArray,cudaMemcpyDeviceToHost));    
 }
 
-extern "C" void  executeKernelBinary( 
-	unsigned char* d_inred, unsigned char* d_ingreen, unsigned char* d_inblue, unsigned char* h_outbinary, 
-    unsigned char* h_outgs, unsigned char* d_outgs, unsigned char* d_outbinary, int imageSize, 
-    size_t sizePixelsArray, int threshold){
+/*extern "C" void  executeKernelBinary( 
+    unsigned char* h_outgs, unsigned char* d_inred, unsigned char* d_ingreen, unsigned char* d_inblue,
+    unsigned char* d_outgs, int imageSize, size_t sizePixelsArray){
 
     int threadsPerBlock = 128;
     printf("MaxThreadsPerBlock:  %d \n", threadsPerBlock);
@@ -106,6 +105,6 @@ extern "C" void  executeKernelBinary(
     
     grayscale<<<gridSize, threadsPerBlock>>>(d_inred, d_ingreen, d_inblue, d_outgs, imageSize);
     binary<<<gridSize, threadsPerBlock>>>(d_outgs, d_outbinary, imageSize);
-}
+}*/
 
 #endif

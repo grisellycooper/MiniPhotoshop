@@ -85,7 +85,7 @@ class Image
         void saveImage(std::string savePath);
         void showImage();
         void showImage(unsigned char* img);
-        void showImage(unsigned char *_reds, unsigned char *_greens, unsigned char *_blues);
+        void showImage(unsigned char *_reds, unsigned char *_greens, unsigned char *_blues); 
         void showHistogram();
         int equalization(unsigned char* outred, unsigned char* outgreen, unsigned char* outblue); 
         int invert(unsigned char* outred, unsigned char* outgreen, unsigned char* outblue);        
