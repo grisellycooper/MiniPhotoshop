@@ -40,12 +40,12 @@ Image::Image(int _width, int _height)
     height = _height;
 }
 
-Image::Image(std::string imageDir)
-{    
-    std::ifstream fin(imageDir, std::ios::binary);    
+Image::Image(std::string imagePath)
+{
+    std::ifstream fin(imagePath, std::ios::binary);    
     fin.read((char*)&signature, sizeof(signature));    
     if (signature.data[0] == 'B' && signature.data[1] == 'M') { 
-        std::cout<<"File BMP found in: "<< imageDir<<std::endl;       
+        std::cout<<"File BMP found in: "<< imagePath<<std::endl;       
         fin.read((char*)&fileHeader, sizeof(fileHeader));
         fin.read((char*)&infoHeader, sizeof(infoHeader));
 
@@ -56,14 +56,27 @@ Image::Image(std::string imageDir)
         width = infoHeader.bmpWidth;
         height = infoHeader.bmpHeight;
         std::cout<<"Size: "<<width <<" * " <<height<<std::endl;
-    
+        
         fin.seekg(fileHeader.dataOffset, fin.beg);
-        int PaddingBytesPerRow = (3 - ((width * 3) % 3)) % 3; //not sure
-        //std::cout<<"Padding: "<<PaddingBytesPerRow <<std::endl;
-
+        
+        /// Only images of 8, 16 and 24 bits will be loaded              
+        /// Get row padding
+        int PaddingBytesPerRow;
+        if(infoHeader.bmpBitCount == 8 || infoHeader.bmpBitCount == 16 || infoHeader.bmpBitCount == 24){
+            if (((width*infoHeader.bmpBitCount/8) % 4) != 0)
+                PaddingBytesPerRow = 4-((width*infoHeader.bmpBitCount/8) % 4);
+            else
+                PaddingBytesPerRow = 0;
+            std::cout<<"Padding: "<<PaddingBytesPerRow <<std::endl;
+        }
+        else{
+            std::cout<<"Image can not be loaded!"<<std::endl; 
+            return;
+        }
+                    
         Pixel pxl;
         int index = 0;
-        
+            
         //Instanciate RGB arrays
         reds = new unsigned char[width*height];
         greens = new unsigned char[width*height];
@@ -82,8 +95,11 @@ Image::Image(std::string imageDir)
             }
             fin.seekg(PaddingBytesPerRow, fin.cur);
         }
+    }
+    else{
+        std::cout<<"Format file must be .bmp"<<std::endl;
     }    
-    fin.close();     
+    fin.close();         
 }
 
 Image::~Image()
@@ -190,12 +206,11 @@ int Image::equalization(unsigned char* outred, unsigned char* outgreen, unsigned
         gatherB += histoB[i];
     }
     funcR[255] = funcG[255] = funcB[255] = 255;
-    std::cout<<"3 ";    
-
-    for(int i = 0; i <256; i++)
+    
+    /*for(int i = 0; i <256; i++)
     {        
         std::cout<<funcR[i]<<" "<<funcG[i]<<" "<<funcB[i]<<std::endl;
-    }
+    }*/
 
     for (int j = 0; j<size; j++){
         outred[j] = funcR[(int)reds[j]];
@@ -284,7 +299,7 @@ void Image::showHistogram()
   calcHist( &bgr_planes[1], 1, 0, cv::Mat(), g_hist, 1, &histSize, &histRange, uniform, accumulate );
   calcHist( &bgr_planes[2], 1, 0, cv::Mat(), r_hist, 1, &histSize, &histRange, uniform, accumulate );
 
-  // Draw the histograms for B, G and R
+  /// Draw the histograms for B, G and R
   int hist_w = 512; int hist_h = 400;
   int bin_w = cvRound( (double) hist_w/histSize );
 
@@ -310,8 +325,8 @@ void Image::showHistogram()
   }
 
   /// Display
-  cv::namedWindow("calcHist Demo", cv::WINDOW_NORMAL );
-  imshow("calcHist Demo", histImage );
+  cv::namedWindow("Histogram", cv::WINDOW_NORMAL );
+  imshow("Histogram", histImage );
 
   cv::waitKey(0);
 
@@ -374,15 +389,15 @@ void Image::saveImage(std::string name)
     } 
 }
 
-int Image::gamma(unsigned char* outred, unsigned char* outgreen, unsigned char* outblue, float gamma)
+int Image::invert(unsigned char* outred, unsigned char* outgreen, unsigned char* outblue)
 {
     int size = width * height;
     int i;
 //#	pragma omp parallel for num_threads(2) default(none) private(i, size) shared(reds,greens,blues) schedule(dynamic,4)
     for(i = 0; i < size; i++){
-        outred[i] = (unsigned char) 255*pow((reds[i]/255),1/gamma);
-        outgreen[i] = (unsigned char) 255*pow((greens[i]/255),1/gamma);
-        outblue[i] = (unsigned char) 255*pow((blues[i]/255),1/gamma);
+        outred[i] = (unsigned char) 255 - reds[i];
+        outgreen[i] = (unsigned char) 255 - greens[i];
+        outblue[i] = (unsigned char) 255 - blues[i];
     }
 }
 
@@ -498,9 +513,9 @@ int Image::maximo(unsigned char* outred, unsigned char* outgreen, unsigned char*
     for (int i = 0; i<height;i++){
         for(int j = 0; j<width;j++){
             index = width*i+j;
-            mred[i+k][j+k] = reds[index];
-            mgreen[i+k][j+k] = greens[index];
-            mblue[i+k][j+k] = blues[index];
+            mred[i+k-1][j+k-1] = reds[index];
+            mgreen[i+k-1][j+k-1] = greens[index];
+            mblue[i+k-1][j+k-1] = blues[index];
             //std::cout<<(int)cv::Matrix[i+1][j+1]<<" ";
         }
         //std::cout<<std::endl;
@@ -526,7 +541,6 @@ int Image::maximo(unsigned char* outred, unsigned char* outgreen, unsigned char*
             tmpb.clear();
         }
     }
-
     return 0;    
 }
 
