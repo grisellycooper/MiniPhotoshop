@@ -4,7 +4,7 @@
 //#include <helper_math.h>
 //#include <helper_functions.h>
 #include <cstdio>
-#include "timer.h"
+#include "../include/timer.h"
 
 
 ///**************** CUDA useful functiions *****************///
@@ -15,17 +15,14 @@
 exit(EXIT_FAILURE);}}
 
 
-__global__ void transfGamma(unsigned char *d_inred, unsigned char *d_ingreen, unsigned char *d_inblue,
-                            unsigned char *d_outred, unsigned char *d_outgreen, unsigned char *d_outblue, 
-                            float gamma) {
-  
+__global__ void transfGamma(unsigned char *d_inred, unsigned char *d_ingreen, unsigned char *d_inblue, unsigned char *d_outred, unsigned char *d_outgreen, unsigned char *d_outblue, float gamma, int imageSize) {  
 	// Global thread index
 	int threadID = threadIdx.x + blockIdx.x * blockDim.x;
 	    	  
-	if(threadID < d_size) {
-		d_outred[threadID] = (unsigned char) 255*powf((d_inred[threadID]/255),gamma);
-        d_outgreen[threadID] = (unsigned char) 255*powf((d_ingreen[threadID]/255),gamma);
-        d_outblue[threadID] = (unsigned char) 255*powf((d_inblue[threadID]/255),gamma);        
+	if(threadID < imageSize) {
+		d_outred[threadID] = (unsigned char) 255*powf((d_inred[threadID]/255),1/gamma);        
+        d_outgreen[threadID] = (unsigned char) 255*powf((d_ingreen[threadID]/255),1/gamma);
+        d_outblue[threadID] = (unsigned char) 255*powf((d_inblue[threadID]/255),1/gamma);       
 	}
 }
 
@@ -39,14 +36,36 @@ extern "C" void  executeKernelTransfGamma(
     /// We're working with 1D size for blocks and grids
 
     /// Get the maximun block size from our device 
-	cudaDevProp prop;
-	int threadsPerBlock = prop.maxThreadsPerBlock;
+    /*cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, 0);*/
+    //cudaDevProp prop;
+    //int threadsPerBlock = prop.maxThreadsPerBlock;
+    int threadsPerBlock = 128;
 	printf("MaxThreadsPerBlock:  %d \n", threadsPerBlock);
 	
     int gridSize = (imageSize + threadsPerBlock-1)/threadsPerBlock;
 	printf("CUDA kernel launch with %d blocks of %d threads\n", gridSize, threadsPerBlock);
 
-    transfGamma<<gridSize, threadsPerBlock>>(d_inred, d_ingreen, d_inblue, d_outred, d_outgreen, d_outblue, gamma);
+    /*printf("Device in\n");
+    for(int i = 0; i < imageSize ; i++){
+        printf("%d %d %d\n", (int)d_inred[i], (int)d_ingreen[i], (int)d_inblue[i] ); 
+    }
+
+    printf("Device out\n");
+    for(int i = 0; i < imageSize ; i++){
+        printf("%d %d %d\n", (int)d_outred[i], (int)d_outgreen[i], (int)d_outblue[i] ); 
+    }*/
+    
+    transfGamma<<<gridSize, threadsPerBlock>>>(d_inred, d_ingreen, d_inblue, d_outred, d_outgreen, d_outblue, gamma, imageSize);
 
     CUDA_CALL(cudaMemcpy(h_outred, d_outred, sizePixelsArray,cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(h_outgreen, d_outgreen, sizePixelsArray,cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(h_outblue, d_outblue, sizePixelsArray,cudaMemcpyDeviceToHost));
+
+    /*printf("\nAfter\n");
+    for(int i = 0; i < imageSize ; i++){
+        printf("%d %d %d\n", h_outred[i], h_outgreen[i], h_outblue[i] ); 
+    }*/
 }
+
+#endif

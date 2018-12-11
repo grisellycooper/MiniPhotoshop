@@ -128,10 +128,13 @@ int Image::getImageHeight()
 }
 
 void Image::getRGBs(unsigned char* _reds, unsigned char* _greens, unsigned char* _blues)
-{
-    _reds = reds;
-    _greens = greens;
-    _blues = blues;
+{    
+    for(int i = 0; i < width*height ; i++){
+        _reds[i] = reds[i];
+        _greens[i] = greens[i];
+        _blues[i] = blues[i];
+        //printf("%d %d %d\n", (int)_reds[i], (int)_greens[i], (int)_blues[i] ); 
+    }
 }
 
 void Image::getImageHistograms()
@@ -209,7 +212,7 @@ void Image::showImage()
         cv::Mat(height,width,CV_8UC1,greens),
         cv::Mat(height,width,CV_8UC1,reds)};
        
-    originalImage;
+    cv::Mat originalImage;
     merge(chan,3,originalImage);
     if(!originalImage.data ) {
         std::cout <<"Something went wrong with image!" << std::endl ;
@@ -414,7 +417,7 @@ int Image::sobel(unsigned char* in, unsigned char* out)
     int gx[3][3] = {{-1,0,1},{-2,0,2},{-1,0,1}};
     int gy[3][3] = {{-1,-2,-1},{0,0,0},{1,2,1}};
     
-    unsigned char matrix[height+2][width+2] = {0};
+    unsigned char matrix[height+2][width+2];
 
     for (int i = 0; i<height+2;i++){
         for(int j = 0; j<width+2;j++){

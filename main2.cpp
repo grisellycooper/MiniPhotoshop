@@ -1,5 +1,7 @@
 #include <iostream>
 #include <string>
+#include <opencv2/opencv.hpp>
+#include <cuda_runtime.h>
 #include "include/image.h"
 
 ///**************** CUDA useful functiions *****************///
@@ -37,8 +39,8 @@ int main(int argc, char* argv[]){
     /// Read & Write image path
     std::string inputImagePath, outputImagePath;
     
-    //inputImagePath = argv[1];           /// Input path        
-    inputImagePath = "../media/Garfield-Portada.bmp";
+    inputImagePath = argv[1];           /// Input path        
+    //inputImagePath = "../media/Garfield-Portada.bmp";
     
     /// Read image
     start = clock();
@@ -51,23 +53,23 @@ int main(int argc, char* argv[]){
     //image->showHistogram();
 
     //** GrayScale **//
-    unsigned char *gs = new unsigned char[image->getImageSize()];
+    /*unsigned char *gs = new unsigned char[image->getImageSize()];
     start = clock();
     image->grayScale(gs);
     end = clock();
     std::cout<<"Converting to GrayScale: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
-    image->showImage(gs);    
+    image->showImage(gs);    */
 
     //** Sobel Filter / Detector de bordes **//
-    unsigned char *sobel = new unsigned char[image->getImageSize()];
+    /*unsigned char *sobel = new unsigned char[image->getImageSize()];
     start = clock();
     image->sobel(gs, sobel);
     end = clock();
     std::cout<<"Sobel Filtering: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
-    image->showImage(sobel);
+    image->showImage(sobel);*/
 
     //** Maximun Filter **//
-    unsigned char *max_red = new unsigned char[image->getImageSize()];    
+    /*unsigned char *max_red = new unsigned char[image->getImageSize()];    
     unsigned char *max_green = new unsigned char[image->getImageSize()];    
     unsigned char *max_blue = new unsigned char[image->getImageSize()];    
     int k = 6; 
@@ -75,7 +77,7 @@ int main(int argc, char* argv[]){
     image->maximo(max_red, max_green, max_blue, k);
     end = clock();
     std::cout<<"Max Filter: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
-    image->showImage(max_red, max_green, max_blue);   
+    image->showImage(max_red, max_green, max_blue);   */
 
     //********* CUDA things **********//
     /// init device
@@ -83,11 +85,22 @@ int main(int argc, char* argv[]){
 	//cudaDeviceSynchronize();
 	//cudaThreadSynchronize();
     
+    //** Gamma **//
+    /*float gamma = 4.0f;
+    unsigned char *gred = new unsigned char[image->getImageSize()];    
+    unsigned char *ggreen = new unsigned char[image->getImageSize()];    
+    unsigned char *gblue = new unsigned char[image->getImageSize()];    
+    start = clock();
+    image->gamma(gred, ggreen, gblue, gamma);
+    end = clock();
+    std::cout<<"Gamma: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
+    image->showImage(gred, ggreen, gblue); */
+
     //** Transformacion Gamma **//
     
     int imageSize = image->getImageSize();
     size_t sizePixelsArray = imageSize * sizeof(unsigned char);
-    float gamma = 0.5f;
+    float gamma = 4.0f;
 
     /// Allocate memory           
     /// Host: Initial RGB values. Output RGB values
@@ -100,6 +113,11 @@ int main(int argc, char* argv[]){
     //float *h_gamma = (float *)malloc(sizeof(float));
 
     image->getRGBs(h_inred, h_ingreen, h_inblue);
+
+    /*printf("\n -host\n");
+    for(int i = 0; i < 5 ; i++){
+        printf("%d %d %d\n", (int)h_inred[i], (int)h_ingreen[i], (int)h_inblue[i] ); 
+    }*/
 
     /// Device: Initial RGB values. Output RGB values
 	unsigned char *d_inred, *d_ingreen, *d_inblue;
@@ -121,11 +139,12 @@ int main(int argc, char* argv[]){
     CUDA_CALL(cudaMemcpy(d_outred, h_outred, sizePixelsArray, cudaMemcpyHostToDevice));
     CUDA_CALL(cudaMemcpy(d_outgreen, h_outgreen, sizePixelsArray, cudaMemcpyHostToDevice));
     CUDA_CALL(cudaMemcpy(d_outblue, h_outblue, sizePixelsArray, cudaMemcpyHostToDevice));
-
+    
     /// Execute Kernel
     executeKernelTransfGamma(h_inred, h_ingreen, h_inblue, h_outred, h_outgreen, h_outblue, 
         d_inred, d_ingreen, d_inblue, d_outred, d_outgreen, d_outblue, gamma, imageSize, sizePixelsArray);
 
+    image->showImage(h_outred, h_outgreen, h_outblue); 
     /// Free space
     free(h_inred);
     free(h_ingreen);

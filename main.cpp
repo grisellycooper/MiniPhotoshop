@@ -88,7 +88,5 @@ int main(int argc, char* argv[]){
     end = clock();
     std::cout<<"Max Filter: "<<(end - start)/(double)CLOCKS_PER_SEC <<" seconds."<< std::endl;
     image->showImage(max_red, max_green, max_blue);   */
-
-    //** Equalization **//
-    
+   
 }
