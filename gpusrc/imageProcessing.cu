@@ -15,23 +15,33 @@
 exit(EXIT_FAILURE);}}
 
 
-__global__ void transfGamma(unsigned char *d_inred, unsigned char *d_ingreen, unsigned char *d_inblue, unsigned char *d_outred, unsigned char *d_outgreen, unsigned char *d_outblue, float gamma, int imageSize) {  
+__global__ void invert(unsigned char *d_inred, unsigned char *d_ingreen, unsigned char *d_inblue, 
+    unsigned char *d_outred, unsigned char *d_outgreen, unsigned char *d_outblue, float gamma, int imageSize) {  
 	// Global thread index
 	int threadID = threadIdx.x + blockIdx.x * blockDim.x;
 	    	  
 	if(threadID < imageSize) {
-		d_outred[threadID] = (unsigned char) 255*powf((d_inred[threadID]/255),1/gamma);        
-        d_outgreen[threadID] = (unsigned char) 255*powf((d_ingreen[threadID]/255),1/gamma);
-        d_outblue[threadID] = (unsigned char) 255*powf((d_inblue[threadID]/255),1/gamma);       
+		d_outred[threadID] = (unsigned char) 255 - d_inred[threadID];        
+        d_outgreen[threadID] = (unsigned char) 255 - d_ingreen[threadID];
+        d_outblue[threadID] = (unsigned char) 255 - d_inblue[threadID];       
 	}
 }
 
-extern "C" void  executeKernelTransfGamma( 
-	unsigned char* h_inred, unsigned char* h_ingreen, unsigned char* h_inblue,
-    unsigned char* h_outred, unsigned char* h_outgreen, unsigned char* h_outblue,
+__global__ void grayscale(unsigned char* d_inred, unsigned char* d_ingreen, unsigned char* d_inblue,
+    unsigned char* d_outgs, int imageSize) {  
+	// Global thread index
+	int threadID = threadIdx.x + blockIdx.x * blockDim.x;
+	    	  
+	if(threadID < imageSize) {
+        d_outgs[threadID] = 0.21*d_inred[threadID] + 0.72*d_ingreen[threadID] + 0.07*d_inblue[threadID];		
+	}
+}
+
+extern "C" void  executeKernelInvert( 
+	unsigned char* h_outred, unsigned char* h_outgreen, unsigned char* h_outblue,
 	unsigned char* d_inred, unsigned char* d_ingreen, unsigned char* d_inblue,
     unsigned char* d_outred, unsigned char* d_outgreen, unsigned char* d_outblue,
-	float gamma, int imageSize, size_t sizePixelsArray)
+	int imageSize, size_t sizePixelsArray)
 {   
     /// We're working with 1D size for blocks and grids
 
@@ -56,7 +66,7 @@ extern "C" void  executeKernelTransfGamma(
         printf("%d %d %d\n", (int)d_outred[i], (int)d_outgreen[i], (int)d_outblue[i] ); 
     }*/
     
-    transfGamma<<<gridSize, threadsPerBlock>>>(d_inred, d_ingreen, d_inblue, d_outred, d_outgreen, d_outblue, gamma, imageSize);
+    invert<<<gridSize, threadsPerBlock>>>(d_inred, d_ingreen, d_inblue, d_outred, d_outgreen, d_outblue, gamma, imageSize);
 
     CUDA_CALL(cudaMemcpy(h_outred, d_outred, sizePixelsArray,cudaMemcpyDeviceToHost));
     CUDA_CALL(cudaMemcpy(h_outgreen, d_outgreen, sizePixelsArray,cudaMemcpyDeviceToHost));
@@ -66,6 +76,36 @@ extern "C" void  executeKernelTransfGamma(
     for(int i = 0; i < imageSize ; i++){
         printf("%d %d %d\n", h_outred[i], h_outgreen[i], h_outblue[i] ); 
     }*/
+}
+
+extern "C" void  executeKernelGrayScale( 
+	unsigned char* h_outgs, unsigned char* d_inred, unsigned char* d_ingreen, unsigned char* d_inblue,
+    unsigned char* d_outgs, int imageSize, size_t sizePixelsArray);{
+
+    int threadsPerBlock = 128;
+	printf("MaxThreadsPerBlock:  %d \n", threadsPerBlock);
+	
+    int gridSize = (imageSize + threadsPerBlock-1)/threadsPerBlock;
+	printf("CUDA kernel launch with %d blocks of %d threads\n", gridSize, threadsPerBlock);
+
+    grayscale<<<gridSize, threadsPerBlock>>>(d_inred, d_ingreen, d_inblue, d_outgs, imageSize);
+
+    CUDA_CALL(cudaMemcpy(h_outgs, d_outgs, sizePixelsArray,cudaMemcpyDeviceToHost));    
+}
+
+extern "C" void  executeKernelBinary( 
+	unsigned char* d_inred, unsigned char* d_ingreen, unsigned char* d_inblue, unsigned char* h_outbinary, 
+    unsigned char* h_outgs, unsigned char* d_outgs, unsigned char* d_outbinary, int imageSize, 
+    size_t sizePixelsArray, int threshold){
+
+    int threadsPerBlock = 128;
+    printf("MaxThreadsPerBlock:  %d \n", threadsPerBlock);
+        
+    int gridSize = (imageSize + threadsPerBlock-1)/threadsPerBlock;
+    printf("CUDA kernel launch with %d blocks of %d threads\n", gridSize, threadsPerBlock);
+    
+    grayscale<<<gridSize, threadsPerBlock>>>(d_inred, d_ingreen, d_inblue, d_outgs, imageSize);
+    binary<<<gridSize, threadsPerBlock>>>(d_outgs, d_outbinary, imageSize);
 }
 
 #endif
